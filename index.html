@@ -1,0 +1,2669 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>تطبيق مسار للنقل الجماعي</title>
+
+<!-- خريطة الاستيراد لـ Firebase -->
+<script type="importmap">
+  {
+    "imports": {
+      "firebase/app": "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js",
+      "firebase/analytics": "https://www.gstatic.com/firebasejs/12.18.0/firebase-analytics.js",
+      "firebase/firestore": "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js",
+      "firebase/auth": "https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js",
+      "firebase/storage": "https://www.gstatic.com/firebasejs/12.18.0/firebase-storage.js"
+    }
+  }
+</script>
+
+<style>
+  * {
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    background-color: #f8f9fa;
+    display: flex;
+    justify-content: center;
+    transition: background-color 0.3s ease;
+  }
+
+  .app-container {
+    width: 100%;
+    max-width: 412px;
+    height: 100vh;
+    background-color: #f8f9fa;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  .app-top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: #ffffff;
+    border-bottom: 1px solid #eaeaea;
+  }
+
+  .app-logo-text {
+    font-size: 14px;
+    font-weight: bold;
+    color: #009663;
+  }
+
+  .content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    padding-bottom: 80px;
+  }
+
+  .page { display: none; }
+  .page.active-page { display: block; }
+
+  /* شريط المقاعد الشاغرة */
+  .ticker-container {
+    background: #0f172a;
+    color: #fff;
+    border-radius: 12px;
+    padding: 8px 12px;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  }
+
+  .ticker-tag {
+    background: #009663;
+    color: #fff;
+    font-size: 10px;
+    font-weight: bold;
+    padding: 3px 8px;
+    border-radius: 6px;
+    white-space: nowrap;
+    margin-left: 10px;
+  }
+
+  .ticker-wrapper {
+    overflow: hidden;
+    white-space: nowrap;
+    width: 100%;
+  }
+
+  .ticker-text {
+    display: inline-block;
+    font-size: 11px;
+    color: #cbd5e1;
+    animation: marquee 15s linear infinite;
+  }
+
+  @keyframes marquee {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+
+  /* السلايدر العلوي */
+  .slider-container {
+    width: 100%;
+    height: 160px;
+    border-radius: 16px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    margin-bottom: 16px;
+    background: #e2e8f0;
+  }
+
+  .slider-track {
+    display: flex;
+    width: 200%;
+    height: 100%;
+    transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .slide { width: 50%; height: 100%; }
+  .slide img { width: 100%; height: 100%; object-fit: cover; border: 0; }
+
+  .slider-dots {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 6px;
+  }
+
+  .dot {
+    width: 8px;
+    height: 8px;
+    background-color: rgba(255, 255, 255, 0.5);
+    border-radius: 50%;
+    transition: 0.3s;
+  }
+
+  .dot.active {
+    background-color: #ffffff;
+    width: 18px;
+    border-radius: 4px;
+  }
+
+  /* بطاقات الأقسام */
+  .custom-image-card {
+    width: 100%;
+    height: 125px;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    margin-bottom: 16px;
+    position: relative;
+    background-color: #e2e8f0;
+    cursor: pointer;
+  }
+
+  .custom-image-card img.banner-img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border: 0;
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .stat-box {
+    background: #fff;
+    border-radius: 12px;
+    padding: 10px 6px;
+    text-align: center;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+    border: 1px solid #e2e8f0;
+  }
+
+  .stat-box h3 { font-size: 15px; color: #009663; margin-bottom: 2px; }
+  .stat-box p { font-size: 10px; color: #64748b; }
+
+  .badges-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 6px;
+    margin-bottom: 16px;
+  }
+
+  .badge-chip {
+    background: #e6f4ea;
+    color: #009663;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 6px 10px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex: 1;
+    justify-content: center;
+  }
+
+  .share-banner {
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+    color: #fff;
+    border-radius: 14px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .share-banner p { font-size: 12px; line-height: 1.4; color: #e2e8f0; }
+  .share-banner button {
+    background: #009663;
+    color: #fff;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+
+  .info-title {
+    font-size: 18px;
+    font-weight: bold;
+    color: #0f172a;
+    margin-bottom: 16px;
+    text-align: center;
+  }
+
+  .faq-card {
+    background: #ffffff;
+    padding: 14px 16px;
+    border-radius: 12px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    border-right: 4px solid #009663;
+  }
+
+  .faq-card h4 {
+    color: #009663;
+    font-size: 14px;
+    margin-bottom: 6px;
+  }
+
+  .faq-card p {
+    color: #475569;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  .terms-accordion { cursor: pointer; }
+  .terms-accordion-header { display: flex; justify-content: space-between; align-items: center; }
+  .arrow-icon { font-size: 12px; color: #009663; transition: 0.3s; }
+  .arrow-icon.open { transform: rotate(180deg); }
+
+  .terms-content {
+    display: none;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed #e2e8f0;
+    font-size: 12px;
+    line-height: 1.7;
+    color: #475569;
+  }
+
+  .options-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  .options-header-row h2 {
+    font-size: 22px;
+    font-weight: bold;
+    color: #0f172a;
+  }
+  .options-close-icon {
+    width: 28px;
+    height: 28px;
+    cursor: pointer;
+    fill: #64748b;
+  }
+
+  .menu-list-row {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+  }
+  .menu-list-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+    font-weight: bold;
+    color: #0f172a;
+  }
+  .menu-list-row svg { width: 24px; height: 24px; fill: #009663; }
+  .menu-divider { border: none; border-top: 1px solid #e2e8f0; margin: 16px 0; }
+
+  .search-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .search-input-icon {
+    position: absolute;
+    right: 12px;
+    width: 20px;
+    height: 20px;
+    pointer-events: none;
+  }
+
+  .admin-search-box {
+    margin-bottom: 14px;
+  }
+
+  .admin-search-input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    font-size: 12px;
+    outline: none;
+    background: #fff;
+  }
+
+  /* تصميم لوحة المشرفين */
+  .admin-header-box {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    background: #ffffff;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+  }
+
+  .admin-section-tabs {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+
+  .admin-sec-btn {
+    padding: 10px 4px;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: bold;
+    color: #334155;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s ease;
+  }
+
+  .admin-sec-btn.active {
+    background: #0f172a;
+    color: #ffffff;
+    border-color: #0f172a;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.15);
+  }
+
+  .admin-filter-chips {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 12px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  .admin-chip-btn {
+    padding: 6px 12px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #475569;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: 0.2s;
+  }
+
+  .admin-chip-btn.active {
+    background: #009663;
+    color: #ffffff;
+    border-color: #009663;
+  }
+
+  .students-count-badge {
+    display: inline-block;
+    background: #e0f2fe;
+    color: #0369a1;
+    font-size: 10px;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 6px;
+    margin-right: 6px;
+  }
+
+  .admin-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+    position: relative;
+  }
+
+  .admin-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #f1f5f9;
+  }
+
+  .admin-card-title {
+    font-size: 13px;
+    font-weight: bold;
+    color: #0f172a;
+  }
+
+  .admin-status-badge {
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 12px;
+    color: #fff;
+    font-weight: bold;
+  }
+
+  .status-new { background-color: #ef4444; }
+  .status-completed { background-color: #2563eb; }
+  .status-active-badge { background-color: #009663; }
+  .status-banned { background-color: #991b1b; }
+
+  .admin-card-info {
+    font-size: 11px;
+    color: #475569;
+    margin-bottom: 8px;
+  }
+
+  .info-row {
+    font-size: 11px;
+    color: #475569;
+    margin-bottom: 4px;
+    line-height: 1.5;
+  }
+
+  .wa-quick-btn {
+    color: #16a34a;
+    font-weight: bold;
+    text-decoration: none;
+    background: #dcfce7;
+    padding: 2px 8px;
+    border-radius: 6px;
+    display: inline-block;
+  }
+
+  .sub-expiry-box {
+    margin: 6px 0;
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .sub-expiry-box.active {
+    background: #ecfdf5;
+    color: #047857;
+    border: 1px solid #a7f3d0;
+  }
+
+  .sub-expiry-box.expired {
+    background: #fef2f2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+  }
+
+  .gps-link {
+    display: inline-block;
+    margin-top: 4px;
+    font-size: 11px;
+    color: #2563eb;
+    font-weight: bold;
+    text-decoration: none;
+  }
+
+  .admin-card-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed #e2e8f0;
+  }
+
+  .action-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .action-label {
+    font-size: 10px;
+    color: #64748b;
+    font-weight: bold;
+    min-width: 55px;
+  }
+
+  .admin-btn {
+    padding: 5px 9px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: bold;
+    cursor: pointer;
+    border: none;
+  }
+
+  .btn-edit { background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; }
+  .btn-status-new { background: #fee2e2; color: #dc2626; }
+  .btn-status-done { background: #dbeafe; color: #2563eb; }
+  .btn-status-active-btn { background: #d1fae5; color: #047857; border: 1px solid #6ee7b7; }
+  .btn-status-ban { background: #fef2f2; color: #991b1b; border: 1px solid #fca5a5; }
+  .btn-renew { background: #fef9c3; color: #854d0e; border: 1px solid #fde047; }
+  .btn-students-toggle { background: #f0f9ff; color: #0369a1; border: 1px solid #bae6fd; }
+
+  .btn-ai-match {
+    background: linear-gradient(135deg, #7c3aed, #4f46e5);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 10px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    box-shadow: 0 2px 6px rgba(124, 58, 237, 0.25);
+  }
+
+  .btn-add-student-sm {
+    background: #009663;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 10px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+
+  .captain-students-box {
+    margin-top: 10px;
+    padding: 10px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    display: none;
+  }
+
+  .captain-students-title {
+    font-size: 11px;
+    font-weight: bold;
+    color: #0f172a;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .student-item-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 8px;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    margin-bottom: 6px;
+    font-size: 11px;
+  }
+
+  .student-item-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .student-remove-btn {
+    background: #fee2e2;
+    color: #dc2626;
+    border: none;
+    border-radius: 4px;
+    padding: 3px 6px;
+    font-size: 10px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+
+  .modal-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(3px);
+    z-index: 100;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    padding: 16px;
+  }
+
+  .modal-card {
+    background: #fff;
+    width: 100%;
+    max-width: 360px;
+    max-height: 90vh;
+    overflow-y: auto;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  }
+
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+  .modal-header h3 { font-size: 16px; color: #0f172a; }
+  .close-btn { font-size: 28px; color: #94a3b8; cursor: pointer; line-height: 1; }
+
+  .form-group { margin-bottom: 12px; }
+  .form-group label { display: block; font-size: 12px; color: #334155; font-weight: 600; margin-bottom: 4px; }
+  .form-group input, .form-group select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 12px;
+    outline: none;
+    background-color: #fff;
+  }
+
+  .location-btn {
+    width: 100%;
+    padding: 10px;
+    background: #f1f5f9;
+    border: 1px dashed #009663;
+    color: #0f172a;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 12px;
+  }
+
+  .modal-submit-btn {
+    width: 100%;
+    background: #009663;
+    color: #fff;
+    border: none;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 6px;
+  }
+
+  .gps-alert-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(3px);
+    z-index: 200;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+  }
+
+  .gps-alert-card {
+    background: #fff;
+    width: 100%;
+    max-width: 330px;
+    border-radius: 20px;
+    padding: 24px 20px;
+    text-align: center;
+  }
+
+  .gps-alert-icon {
+    width: 55px; height: 55px; background: #fee2e2; color: #ef4444;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 26px; margin: 0 auto 16px auto;
+  }
+
+  .gps-alert-card h3 { font-size: 17px; color: #0f172a; font-weight: bold; margin-bottom: 10px; }
+  .gps-alert-card p { font-size: 12px; color: #64748b; line-height: 1.6; margin-bottom: 20px; }
+
+  .gps-alert-actions { display: flex; gap: 10px; }
+  .gps-enable-btn { flex: 1.2; background: #1d4ed8; color: #fff; border: none; padding: 12px; border-radius: 12px; font-weight: bold; cursor: pointer; }
+  .gps-close-btn { flex: 0.8; background: #f1f5f9; color: #334155; border: none; padding: 12px; border-radius: 12px; font-weight: bold; cursor: pointer; }
+
+  .bottom-nav {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 65px;
+    background: white;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    border-top: 1px solid #eaeaea;
+    z-index: 10;
+  }
+
+  .nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #8e8e93;
+    text-decoration: none;
+    font-size: 11px;
+    cursor: pointer;
+  }
+
+  .nav-item .svg-icon { width: 22px; height: 22px; fill: #8e8e93; margin-bottom: 3px; }
+  .nav-item.active { color: #009663; font-weight: bold; }
+  .nav-item.active .svg-icon { fill: #009663; }
+
+  .app-container.dark-mode { background-color: #0b0f19 !important; color: #f1f5f9 !important; }
+  .app-container.dark-mode .app-top-bar { background-color: #0f172a !important; border-bottom-color: #1e293b !important; }
+  .app-container.dark-mode .content { background-color: #0b0f19 !important; }
+  .app-container.dark-mode .stat-box,
+  .app-container.dark-mode .faq-card,
+  .app-container.dark-mode .modal-card,
+  .app-container.dark-mode .custom-image-card,
+  .app-container.dark-mode .menu-list-row,
+  .app-container.dark-mode .admin-card,
+  .app-container.dark-mode .admin-header-box,
+  .app-container.dark-mode .admin-sec-btn,
+  .app-container.dark-mode .admin-chip-btn,
+  .app-container.dark-mode .admin-search-input,
+  .app-container.dark-mode .form-group input,
+  .app-container.dark-mode .captain-students-box,
+  .app-container.dark-mode .student-item-row {
+    background-color: #1e293b !important; color: #f1f5f9 !important; border-color: #334155 !important;
+  }
+  .app-container.dark-mode .admin-sec-btn.active {
+    background-color: #38bdf8 !important;
+    color: #0f172a !important;
+  }
+  .app-container.dark-mode .admin-chip-btn.active {
+    background-color: #009663 !important;
+    color: #ffffff !important;
+  }
+  .app-container.dark-mode .info-row {
+    color: #cbd5e1 !important;
+  }
+  .app-container.dark-mode .bottom-nav { background-color: #0f172a !important; border-top-color: #1e293b !important; }
+  .app-container.dark-mode .info-title,
+  .app-container.dark-mode .modal-header h3,
+  .app-container.dark-mode .form-group label,
+  .app-container.dark-mode .faq-card h4,
+  .app-container.dark-mode .options-header-row h2,
+  .app-container.dark-mode .admin-card-title,
+  .app-container.dark-mode .menu-list-content,
+  .app-container.dark-mode .captain-students-title { color: #38bdf8 !important; }
+</style>
+</head>
+<body>
+
+<div class="app-container" id="appContainer">
+
+  <div class="app-top-bar">
+    <span class="app-logo-text">تطبيق مسار 🚌</span>
+    <span style="font-size: 11px; color: #64748b;">النقل الجماعي المعتمد</span>
+  </div>
+
+  <div class="content">
+    
+    <!-- 1. الرئيسية -->
+    <div id="page-home" class="page active-page">
+
+      <div class="ticker-container">
+        <span class="ticker-tag">تحديث حي 🟢</span>
+        <div class="ticker-wrapper">
+          <span class="ticker-text">مقاعد شاغرة متوفرة الآن: خط الصقلاوية - الجامعة | خط الحبانية - المدارس | خط الجولان</span>
+        </div>
+      </div>
+
+      <div class="slider-container" id="sliderContainer">
+        <div class="slider-track" id="sliderTrack">
+          <div class="slide"><img id="imgSlide1" src="" alt="إعلان 1"></div>
+          <div class="slide"><img id="imgSlide2" src="" alt="إعلان 2"></div>
+        </div>
+        <div class="slider-dots">
+          <div class="dot active" id="dot1" onclick="goToSlide(0)"></div>
+          <div class="dot" id="dot2" onclick="goToSlide(1)"></div>
+        </div>
+      </div>
+
+      <div class="badges-row">
+        <div class="badge-chip">❄️ مركبات مكيفة</div>
+        <div class="badge-chip">🛡️ نقل آمن</div>
+        <div class="badge-chip">⏰ مواعيد منتظمة</div>
+      </div>
+
+      <div class="custom-image-card" onclick="openBookingModal('خط جامعة')">
+        <img class="banner-img" id="imgCardUniv" src="" alt="خط جامعة">
+      </div>
+
+      <div class="custom-image-card" onclick="openBookingModal('خط مدرسة')">
+        <img class="banner-img" id="imgCardSchool" src="" alt="خط مدرسة">
+      </div>
+
+      <div class="custom-image-card" onclick="openBookingModal('تسجيل كابتن')">
+        <img class="banner-img" id="imgCardCaptain" src="" alt="تسجيل كابتن خط">
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-box"><h3>+500</h3><p>طالب ومستفيد</p></div>
+        <div class="stat-box"><h3>+35</h3><p>خط نشط يومياً</p></div>
+        <div class="stat-box"><h3>100%</h3><p>التزام وأمان</p></div>
+      </div>
+
+      <div class="share-banner">
+        <p>شارك التطبيق مع زملائك<br><span style="font-size:10px; opacity:0.8;">لتسهيل حجز الخطوط الجماعية</span></p>
+        <button onclick="shareApp()">مشاركة 📤</button>
+      </div>
+
+    </div>
+
+    <!-- 2. الكباتن النشطون -->
+    <div id="page-active-captains" class="page">
+      <div class="info-title">الكباتن النشطون 🚙</div>
+      
+      <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; background: #fff; padding: 12px; border-radius: 14px; border: 1px solid #e2e8f0; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
+        <div class="search-input-wrapper">
+          <svg class="search-input-icon" style="fill: #eab308;" viewBox="0 0 24 24">
+            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"></path>
+          </svg>
+          <input type="text" class="admin-search-input" id="activeCaptainsOriginInput" placeholder="نقطة الانطلاق (مثال: الأنبار، الفلوجة...)" oninput="filterActiveCaptainsList()" style="padding-right: 40px;">
+        </div>
+
+        <div class="search-input-wrapper">
+          <svg class="search-input-icon" style="fill: #2563eb;" viewBox="0 0 24 24">
+            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"></path>
+          </svg>
+          <input type="text" class="admin-search-input" id="activeCaptainsDestInput" placeholder="نقطة الوصول (مثال: جامعة الفلوجة، المدرسة...)" oninput="filterActiveCaptainsList()" style="padding-right: 40px;">
+        </div>
+
+        <div class="search-input-wrapper">
+          <svg class="search-input-icon" style="fill: #009663;" viewBox="0 0 24 24">
+            <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"></path>
+          </svg>
+          <input type="text" class="admin-search-input" id="activeCaptainsKeywordInput" placeholder="البحث باسم الكابتن أو نوع سيارته..." oninput="filterActiveCaptainsList()" style="padding-right: 40px;">
+        </div>
+      </div>
+
+      <div id="activeCaptainsListContainer">
+        <p style="text-align:center; font-size:12px; color:#64748b; padding:20px;">جاري تحميل الكباتن النشطين...</p>
+      </div>
+    </div>
+
+    <!-- 3. أعرف عنا (مع الأسئلة الشائعة) -->
+    <div id="page-faq" class="page">
+      <div class="info-title">أعرف عنا والأسئلة الشائعة ℹ️</div>
+      
+      <div class="faq-card" style="border-right-color: #0f172a; margin-bottom: 14px;">
+        <h4 style="color: #0f172a;">عن تطبيق مسار 🚌</h4>
+        <p>تطبيق مسار هو منصة النقل الجماعي المعتمدة في العراق، تهدف إلى تسهيل وتنظيم حركة نقل الطلاب والموظفين بين الأقضية والمحافظات والجامعات والمدارس بأمان وراحة تامة.</p>
+      </div>
+
+      <div class="faq-card">
+        <h4>كيف يتم تحديد أجور النقل؟</h4>
+        <p>تُحدد بناءً على المسافة بين سكنك ومكان الدوام ونوع السيارة.</p>
+      </div>
+      <div class="faq-card">
+        <h4>ما هي انواع المركبات المتاحة؟</h4>
+        <p>نوفر حافلات حديثة ومكيفة (ستاركس / فان) إضافة للسيارات الصالون.</p>
+      </div>
+      <div class="faq-card terms-accordion" onclick="toggleTerms()">
+        <div class="terms-accordion-header">
+          <h4 style="margin-bottom:0; color:#0f172a;">📜 الشروط والأحكام وإخلاء المسؤولية</h4>
+          <span class="arrow-icon" id="termsArrow">▼</span>
+        </div>
+        <div class="terms-content" id="termsContent">
+          تطبيق <strong>(مسار)</strong> منصة وسيطة للتنسيق والربط الإلكتروني بين الركاب والسائقين. المسؤولية القانونية والتشغيلية للرحلات تقع على عاتق السائق مباشرة وفق القوانين العراقية النافذة.
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. القائمة -->
+    <div id="page-menu" class="page">
+      <div class="options-header-row">
+        <h2>الخيارات</h2>
+        <svg class="options-close-icon" onclick="showTab('page-home', document.querySelectorAll('.nav-item')[0])" viewBox="0 0 24 24">
+          <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 13.41 12z"></path>
+        </svg>
+      </div>
+
+      <div class="menu-list-row" onclick="openStudentAccountModal()" style="margin-bottom: 12px;">
+        <div class="menu-list-content">
+          <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"></path></svg>
+          <span>إعدادات الحساب (استعلام الكابتن)</span>
+        </div>
+      </div>
+
+      <div class="menu-list-row" onclick="showTab('page-admin')" style="background: #f0fdf4; border-color: #bbf7d0;">
+        <div class="menu-list-content" style="color: #009663;">
+          <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8s0 0 0 0z"></path></svg>
+          <span>لوحة المشرفين 🛡️</span>
+        </div>
+      </div>
+
+      <div class="menu-list-row" onclick="toggleDarkMode()">
+        <div class="menu-list-content">
+          <svg viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-2.98 0-5.4-2.42-5.4-5.4 0-1.81.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z"></path></svg>
+          <span>إعدادات التطبيق (<span id="menuThemeText">الوضع الليلي</span>)</span>
+        </div>
+      </div>
+
+      <hr class="menu-divider">
+
+      <div class="menu-list-row" onclick="showTab('page-faq')">
+        <div class="menu-list-content">
+          <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"></path></svg>
+          <span>أعرف عنا</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 5. صفحة المشرفين -->
+    <div id="page-admin" class="page">
+      <div class="admin-header-box">
+        <div>
+          <div class="info-title" style="margin-bottom: 2px; text-align: right;">لوحة المشرفين 🛡️</div>
+          <span style="font-size: 11px; color: #64748b;">إدارة الطلبات، الكباتن والاشتراكات</span>
+        </div>
+        <button onclick="window.logoutAdmin && window.logoutAdmin()" style="background: #fee2e2; color: #dc2626; border: none; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: bold; cursor: pointer;">تسجيل الخروج 🚪</button>
+      </div>
+
+      <!-- زر المطابقة الذكية الشاملة لجميع الكباتن -->
+      <div style="margin-bottom: 12px;">
+        <button onclick="openGlobalAiSmartMatchModal()" style="width: 100%; background: linear-gradient(135deg, #7c3aed, #4f46e5); color: #fff; border: none; padding: 10px; border-radius: 12px; font-size: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 3px 10px rgba(124, 58, 237, 0.3);">
+          🤖 التشغيل الشامل للمطابقة الذكية (لكل الكباتن والطلاب) ✨
+        </button>
+      </div>
+      
+      <div class="admin-section-tabs">
+        <button class="admin-sec-btn active" id="secBtnCaptains" onclick="switchAdminMainSec('captains')">🚙 الكباتن</button>
+        <button class="admin-sec-btn" id="secBtnUniv" onclick="switchAdminMainSec('university')">🎓 الجامعة</button>
+        <button class="admin-sec-btn" id="secBtnSchool" onclick="switchAdminMainSec('school')">🏫 المدارس</button>
+        <button class="admin-sec-btn" id="secBtnBanned" onclick="switchAdminMainSec('banned')">🚫 المحظورون</button>
+      </div>
+
+      <div class="admin-filter-chips" id="adminFilterChipsContainer">
+      </div>
+
+      <div class="admin-search-box">
+        <input type="text" class="admin-search-input" id="adminSearchInput" placeholder="🔍 بحث عن اسم، محافظة، مدينة، أو وجهة..." oninput="filterAdminList()">
+      </div>
+
+      <div id="adminListContainer">
+        <p style="text-align:center; font-size:12px; color:#64748b; padding:20px;">جاري تحميل البيانات...</p>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="bottom-nav">
+    <div class="nav-item active" onclick="showTab('page-home', this)">
+      <svg class="svg-icon" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"></path></svg>
+      <span>الرئيسية</span>
+    </div>
+    <div class="nav-item" onclick="showTab('page-active-captains', this)">
+      <svg class="svg-icon" viewBox="0 0 24 24"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.22.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99z"></path></svg>
+      <span>الكباتن</span>
+    </div>
+    <div class="nav-item" onclick="showTab('page-menu', this)">
+      <svg class="svg-icon" viewBox="0 0 24 24"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"></path></svg>
+      <span>القائمة</span>
+    </div>
+  </div>
+</div>
+
+<!-- مودال إعدادات حساب الطالب -->
+<div class="modal-overlay" id="studentAccountModal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3>👤 إعدادات الحساب</h3>
+      <span class="close-btn" onclick="closeStudentAccountModal()">×</span>
+    </div>
+    <p style="font-size: 12px; color: #64748b; margin-bottom: 12px;">أدخل رقم هاتفك المسجل في التطبيق للتعرف على كابتن الخط الخاص بك ومعلومات سيارته:</p>
+    <div class="form-group">
+      <label>رقم الهاتف المسجل 📱</label>
+      <input type="tel" id="studentSearchPhone" placeholder="مثال: 07700000000">
+    </div>
+    <button class="modal-submit-btn" onclick="searchStudentCaptain()" style="background:#009663;">بحث عن الكابتن 🔍</button>
+    <div id="captainQueryResult" style="margin-top: 14px;"></div>
+  </div>
+</div>
+
+<!-- مودال الحجز والتسجيل -->
+<div class="modal-overlay" id="bookingModal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3 id="modalTitle">طلب حجز خط</h3>
+      <span class="close-btn" onclick="closeBookingModal()">×</span>
+    </div>
+    <div class="form-group">
+      <label>الاسم الكامل</label>
+      <input type="text" id="custName" placeholder="أدخل اسمك الكريم">
+    </div>
+    <div class="form-group">
+      <label>رقم الواتساب 📱</label>
+      <input type="tel" id="custPhone" placeholder="مثال: 07700000000">
+    </div>
+    
+    <!-- نقطة الانطلاق: المحافظة وبجانبها المدينة -->
+    <div class="form-group">
+      <label id="areaLabel">نقطة الانطلاق (المحافظة والمدينة)</label>
+      <div style="display: flex; gap: 8px;">
+        <input type="text" id="custGovernorate" placeholder="المحافظة (مثال: الأنبار)" style="flex: 1;">
+        <input type="text" id="custCity" placeholder="المدينة / القضاء (مثال: الفلوجة)" style="flex: 1;">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>موقع المنزل (GPS) <span id="locWarning" style="color: #ef4444; font-size: 11px;">⚠️ مطلوب</span></label>
+      <button type="button" class="location-btn" id="locBtn" onclick="getCurrentLocation()">تحديد موقعي التلقائي 📍</button>
+    </div>
+    <div class="form-group">
+      <label id="destLabel">الجامعة أو المدرسة (الوجهة)</label>
+      <input type="text" id="custUniv" placeholder="أدخل الوجهة...">
+    </div>
+    <div class="form-group">
+      <label>نوع الدوام</label>
+      <select id="custShift"><option value="صباحي">صباحي</option><option value="مسائي">مسائي</option></select>
+    </div>
+    <div id="captainExtraFields" style="display: none;">
+      <div class="form-group">
+        <label>نوع السيارة ورقمها ولونها 🚙</label>
+        <input type="text" id="captainCarInfo" placeholder="مثال: ستاركس أبيض / بغداد 12345">
+      </div>
+    </div>
+    <button class="modal-submit-btn" onclick="submitBooking()" style="background:#009663;">إرسال الطلب عبر الواتساب 💬</button>
+  </div>
+</div>
+
+<!-- مودال إضافة طالب -->
+<div class="modal-overlay" id="assignStudentModal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3>➕ إضافة طالب لخط الكابتن</h3>
+      <span class="close-btn" onclick="closeAssignStudentModal()">×</span>
+    </div>
+    
+    <div class="form-group">
+      <label>نوع الدراسة / الوجهة</label>
+      <select id="manualStudentType">
+        <option value="طالب جامعة">طالب جامعة 🎓</option>
+        <option value="طالب مدرسة">طالب مدرسة 🏫</option>
+      </select>
+    </div>
+
+    <div class="form-group" style="position: relative;">
+      <label>اسم الطالب</label>
+      <input type="text" id="manualStudentName" placeholder="أدخل اسم الطالب..." autocomplete="off">
+    </div>
+
+    <div class="form-group">
+      <label>رقم الهاتف / الواتساب</label>
+      <input type="tel" id="manualStudentPhone" placeholder="07700000000">
+    </div>
+
+    <button class="modal-submit-btn" onclick="submitAssignStudent()">إضافة الطالب للخط ✅</button>
+  </div>
+</div>
+
+<!-- مودال المطابقة الذكية بالذكاء الاصطناعي (AI Smart Match Modal) -->
+<div class="modal-overlay" id="aiSmartMatchModal">
+  <div class="modal-card" style="max-width: 420px;">
+    <div class="modal-header">
+      <h3 style="color: #7c3aed;">🤖 نظام المطابقة الذكية بالذكاء الاصطناعي</h3>
+      <span class="close-btn" onclick="closeAiSmartMatchModal()">×</span>
+    </div>
+    <p style="font-size: 11px; color: #64748b; margin-bottom: 10px;" id="aiSmartMatchInfoTitle">
+      تحليل مسار الكابتن ومطابقته ذكياً مع الطلاب غير الموزعين:
+    </p>
+    <div id="aiSmartMatchListContainer" style="max-height: 280px; overflow-y: auto; margin-bottom: 12px;">
+      <!-- تعبئة ديناميكية لنتائج الذكاء الاصطناعي -->
+    </div>
+    <button class="modal-submit-btn" id="aiAssignAllBtn" style="background: linear-gradient(135deg, #7c3aed, #4f46e5); display: none;" onclick="aiAssignAllTopMatches()">
+      ✨ إضافة جميع الطلاب المطابقين ذكياً (أعلى من 70%) بضغطة واحدة
+    </button>
+  </div>
+</div>
+
+<!-- مودال المطابقة الشاملة الذكية (Global AI Smart Match Modal) -->
+<div class="modal-overlay" id="globalAiSmartMatchModal">
+  <div class="modal-card" style="max-width: 460px;">
+    <div class="modal-header">
+      <h3 style="color: #7c3aed;">🤖 المطابقة الشاملة لكافة الكباتن والطلاب</h3>
+      <span class="close-btn" onclick="closeGlobalAiSmartMatchModal()">×</span>
+    </div>
+    <p style="font-size: 11px; color: #64748b; margin-bottom: 10px;" id="globalAiInfoTitle">
+      يقوم محرك الذكاء الاصطناعي بعرض الكباتن مع رقم الهاتف، نقطة الانطلاق، الوجهة، وقائمة الطلاب المتوافقين معهم:
+    </p>
+    <div id="globalAiMatchListContainer" style="max-height: 350px; overflow-y: auto; margin-bottom: 12px;">
+      <!-- تعبئة النتائج الشاملة -->
+    </div>
+    <button class="modal-submit-btn" id="globalAiAssignAllBtn" style="background: linear-gradient(135deg, #7c3aed, #4f46e5); display: none;" onclick="globalAiAssignAllMatches()">
+      ✨ ربط جميع المطابقات الممتازة (≥70%) دفعة واحدة تلقائياً 🚀
+    </button>
+  </div>
+</div>
+
+<!-- مودال تسجيل دخول المشرف -->
+<div class="modal-overlay" id="adminLoginModal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3>🔐 تسجيل دخول المشرف</h3>
+      <span class="close-btn" onclick="closeAdminLoginModal()">×</span>
+    </div>
+    <div class="form-group">
+      <label>البريد الإلكتروني</label>
+      <input type="email" id="adminEmail" placeholder="admin@masar.com">
+    </div>
+    <div class="form-group">
+      <label>كلمة المرور</label>
+      <input type="password" id="adminPassword" placeholder="••••••••">
+    </div>
+    <div id="adminLoginError" style="color: #ef4444; font-size: 11px; margin-bottom: 8px; display: none;"></div>
+    <button class="modal-submit-btn" onclick="submitAdminLogin()">تسجيل الدخول</button>
+  </div>
+</div>
+
+<!-- مودال تنبيه الـ GPS -->
+<div class="gps-alert-overlay" id="gpsAlertModal">
+  <div class="gps-alert-card">
+    <div class="gps-alert-icon">🚫</div>
+    <h3>تحديد الموقع مطفئ</h3>
+    <p>يرجى تفعيل الـ GPS في هاتفك لتحديد موقعك بدقة.</p>
+    <div class="gps-alert-actions">
+      <button class="gps-enable-btn" onclick="retryLocation()">إعادة المحاولة</button>
+      <button class="gps-close-btn" onclick="closeGpsAlert()">إغلاق</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const GITHUB_RAW_BASE = "https://raw.githubusercontent.com/mohammedkj897-glitch/masar-images/main/";
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  let longPressTimer;
+  function handlePressStart(serial) {
+    if (!serial || serial === 'لا يوجد') return;
+    longPressTimer = setTimeout(() => {
+      alert(`🔢 الرقم التسلسلي للكابتن: ${serial}`);
+    }, 700);
+  }
+
+  function handlePressEnd() {
+    clearTimeout(longPressTimer);
+  }
+
+  function loadAppImages() {
+    const el1 = document.getElementById('imgSlide1');
+    const el2 = document.getElementById('imgSlide2');
+    const elUniv = document.getElementById('imgCardUniv');
+    const elSchool = document.getElementById('imgCardSchool');
+    const elCap = document.getElementById('imgCardCaptain');
+
+    if(el1) el1.src = GITHUB_RAW_BASE + "1788057691528.jpg";
+    if(el2) el2.src = GITHUB_RAW_BASE + "1788057740034.jpg";
+    if(elUniv) elUniv.src = GITHUB_RAW_BASE + "1788057775708.jpg";
+    if(elSchool) elSchool.src = GITHUB_RAW_BASE + "1788057813181.jpg";
+    if(elCap) elCap.src = GITHUB_RAW_BASE + "1788057831817.jpg";
+  }
+
+  if (document.readyState === 'interactive' || document.readyState === 'complete') {
+    loadAppImages();
+  } else {
+    document.addEventListener('DOMContentLoaded', loadAppImages);
+  }
+
+  let currentIndex = 0;
+  const track = document.getElementById('sliderTrack');
+  const dot1 = document.getElementById('dot1');
+  const dot2 = document.getElementById('dot2');
+  const sliderContainer = document.getElementById('sliderContainer');
+
+  function updateSlider() {
+    if(!track) return;
+    track.style.transform = `translateX(${currentIndex * 50}%)`;
+    if (currentIndex === 0) {
+      if(dot1) dot1.classList.add('active');
+      if(dot2) dot2.classList.remove('active');
+    } else {
+      if(dot2) dot2.classList.add('active');
+      if(dot1) dot1.classList.remove('active');
+    }
+  }
+
+  function goToSlide(index) {
+    currentIndex = index;
+    updateSlider();
+  }
+
+  let autoSlideInterval = setInterval(() => {
+    currentIndex = currentIndex === 0 ? 1 : 0;
+    updateSlider();
+  }, 3500);
+
+  if (sliderContainer) {
+    sliderContainer.addEventListener('mouseenter', () => clearInterval(autoSlideInterval));
+    sliderContainer.addEventListener('mouseleave', () => {
+      autoSlideInterval = setInterval(() => {
+        currentIndex = currentIndex === 0 ? 1 : 0;
+        updateSlider();
+      }, 3500);
+    });
+  }
+
+  let selectedService = '';
+  let userLocationUrl = '';
+  let isAdminAuthenticated = false;
+  let currentAdminCategory = 'captains_all';
+  let activeCaptainIdForAssign = null;
+  let currentMainSec = 'captains';
+  
+  let activeCaptainForAiMatch = null;
+  let currentAiMatches = [];
+
+  window.currentAdminCategory = 'captains_all';
+
+  function renderSubFilterChips(sec) {
+    const container = document.getElementById('adminFilterChipsContainer');
+    if (!container) return;
+
+    let html = '';
+    if (sec === 'captains') {
+      html = `
+        <button class="admin-chip-btn active" id="chipCapAll" onclick="switchSubFilter('captains_all', 'chipCapAll')">الكل 📋</button>
+        <button class="admin-chip-btn" id="chipCapNew" onclick="switchSubFilter('captains', 'chipCapNew')">🔴 جدد</button>
+        <button class="admin-chip-btn" id="chipCapCompleted" onclick="switchSubFilter('completed_captains', 'chipCapCompleted')">🔵 مكتملون</button>
+        <button class="admin-chip-btn" id="chipCapActive" onclick="switchSubFilter('active_captains', 'chipCapActive')">🟢 نشطون</button>
+      `;
+    } else if (sec === 'university') {
+      html = `
+        <button class="admin-chip-btn active" id="chipUnivAll" onclick="switchSubFilter('university_all', 'chipUnivAll')">الكل 📋</button>
+        <button class="admin-chip-btn" id="chipUnivNew" onclick="switchSubFilter('university_students', 'chipUnivNew')">🔴 جدد</button>
+        <button class="admin-chip-btn" id="chipUnivCompleted" onclick="switchSubFilter('completed_university_students', 'chipUnivCompleted')">🔵 مكتملون</button>
+      `;
+    } else if (sec === 'school') {
+      html = `
+        <button class="admin-chip-btn active" id="chipSchoolAll" onclick="switchSubFilter('school_all', 'chipSchoolAll')">الكل 📋</button>
+        <button class="admin-chip-btn" id="chipSchoolNew" onclick="switchSubFilter('school_students', 'chipSchoolNew')">🔴 جدد</button>
+        <button class="admin-chip-btn" id="chipSchoolCompleted" onclick="switchSubFilter('completed_school_students', 'chipSchoolCompleted')">🔵 مكتملون</button>
+      `;
+    } else if (sec === 'banned') {
+      html = `
+        <button class="admin-chip-btn active" id="chipBanned" onclick="switchSubFilter('banned', 'chipBanned')">🚫 قائمة الحظر</button>
+      `;
+    }
+
+    container.innerHTML = html;
+  }
+
+  function switchAdminMainSec(sec) {
+    currentMainSec = sec;
+    document.querySelectorAll('.admin-sec-btn').forEach(btn => btn.classList.remove('active'));
+    
+    let defaultCat = 'captains_all';
+    if (sec === 'captains') {
+      document.getElementById('secBtnCaptains').classList.add('active');
+      defaultCat = 'captains_all';
+    } else if (sec === 'university') {
+      document.getElementById('secBtnUniv').classList.add('active');
+      defaultCat = 'university_all';
+    } else if (sec === 'school') {
+      document.getElementById('secBtnSchool').classList.add('active');
+      defaultCat = 'school_all';
+    } else if (sec === 'banned') {
+      document.getElementById('secBtnBanned').classList.add('active');
+      defaultCat = 'banned';
+    }
+
+    renderSubFilterChips(sec);
+    switchAdminTab(defaultCat);
+  }
+
+  function switchSubFilter(cat, activeBtnId) {
+    document.querySelectorAll('.admin-chip-btn').forEach(btn => btn.classList.remove('active'));
+    const btn = document.getElementById(activeBtnId);
+    if (btn) btn.classList.add('active');
+    
+    switchAdminTab(cat);
+  }
+
+  function switchAdminTab(cat) {
+    currentAdminCategory = cat;
+    window.currentAdminCategory = cat;
+    document.getElementById('adminSearchInput').value = '';
+    if (typeof window.loadAdminCategory === 'function') window.loadAdminCategory(cat);
+  }
+
+  function showTab(pageId, element) {
+    if (pageId === 'page-admin' && !isAdminAuthenticated) {
+      document.getElementById('adminLoginModal').style.display = 'flex';
+      return;
+    }
+
+    document.querySelectorAll('.page').forEach(page => page.classList.remove('active-page'));
+    document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+    
+    const targetPage = document.getElementById(pageId);
+    if(targetPage) targetPage.classList.add('active-page');
+    if (element) element.classList.add('active');
+
+    if (pageId === 'page-admin') {
+      renderSubFilterChips(currentMainSec || 'captains');
+      if (typeof window.loadAdminCategory === 'function') {
+        window.loadAdminCategory(window.currentAdminCategory || 'captains_all');
+      }
+    }
+
+    if (pageId === 'page-active-captains' && typeof window.loadActiveCaptainsForUsers === 'function') {
+      window.loadActiveCaptainsForUsers();
+    }
+  }
+
+  function closeAdminLoginModal() {
+    document.getElementById('adminLoginModal').style.display = 'none';
+    document.getElementById('adminLoginError').style.display = 'none';
+  }
+
+  async function submitAdminLogin() {
+    const email = document.getElementById('adminEmail').value.trim();
+    const pass = document.getElementById('adminPassword').value.trim();
+    const errDiv = document.getElementById('adminLoginError');
+
+    if (!email || !pass) {
+      errDiv.innerText = 'يرجى إدخال البريد الإلكتروني وكلمة المرور';
+      errDiv.style.display = 'block';
+      return;
+    }
+
+    if (typeof window.loginAdminFirebase === 'function') {
+      const res = await window.loginAdminFirebase(email, pass);
+      if (res.success) {
+        closeAdminLoginModal();
+        showTab('page-admin');
+      } else {
+        errDiv.innerText = res.error;
+        errDiv.style.display = 'block';
+      }
+    } else {
+      errDiv.innerText = 'جاري الاتصال بالنظام، يرجى إعادة المحاولة بعد ثوانٍ...';
+      errDiv.style.display = 'block';
+    }
+  }
+
+  function toggleTerms() {
+    const content = document.getElementById('termsContent');
+    const arrow = document.getElementById('termsArrow');
+    content.style.display = content.style.display === "block" ? "none" : "block";
+    arrow.classList.toggle('open');
+  }
+
+  function toggleDarkMode() {
+    const container = document.getElementById('appContainer');
+    const menuThemeText = document.getElementById('menuThemeText');
+    container.classList.toggle('dark-mode');
+    if(menuThemeText) menuThemeText.innerText = container.classList.contains('dark-mode') ? 'الوضع النهاري' : 'الوضع الليلي';
+  }
+
+  function openStudentAccountModal() {
+    document.getElementById('studentAccountModal').style.display = 'flex';
+    const savedPhone = localStorage.getItem('masar_saved_phone');
+    const phoneInput = document.getElementById('studentSearchPhone');
+    if (savedPhone) {
+      phoneInput.value = savedPhone;
+      searchStudentCaptain();
+    } else {
+      phoneInput.value = '';
+      document.getElementById('captainQueryResult').innerHTML = '';
+    }
+  }
+
+  function closeStudentAccountModal() {
+    document.getElementById('studentAccountModal').style.display = 'none';
+  }
+
+  async function searchStudentCaptain() {
+    const inputPhone = document.getElementById('studentSearchPhone').value.trim();
+    const resultDiv = document.getElementById('captainQueryResult');
+
+    if (!inputPhone) {
+      resultDiv.innerHTML = `<p style="font-size:12px; color:#ef4444; text-align:center;">يرجى إدخال رقم الهاتف أولاً.</p>`;
+      return;
+    }
+
+    localStorage.setItem('masar_saved_phone', inputPhone);
+    resultDiv.innerHTML = `<p style="font-size:12px; color:#64748b; text-align:center;">جاري البحث عن بيانات الكابتن... ⏳</p>`;
+
+    if (typeof window.fetchCaptainForStudentPhone === 'function') {
+      const match = await window.fetchCaptainForStudentPhone(inputPhone);
+      if (match) {
+        const safeCaptainName = escapeHtml(match.fullName || 'غير محدد');
+        const safeCaptainPhone = escapeHtml(match.phone || 'غير محدد');
+        const safeCarInfo = escapeHtml(match.carInfo || 'غير محدد');
+        const safeArea = escapeHtml(match.area || 'غير محدد');
+        const safeDest = escapeHtml(match.destination || 'غير محدد');
+        const captainImg = match.imageUrl || (GITHUB_RAW_BASE + "1788057831817.jpg");
+
+        const cleanCaptainPhone = safeCaptainPhone.replace(/\D/g, '');
+        const waLink = cleanCaptainPhone ? `https://wa.me/${cleanCaptainPhone.startsWith('0') ? '964' + cleanCaptainPhone.slice(1) : cleanCaptainPhone}` : '#';
+
+        const cleanTarget = (typeof window.cleanPhoneHelper === 'function') ? window.cleanPhoneHelper(inputPhone) : inputPhone.replace(/\D/g, '').replace(/^964/, '0');
+        const studentsList = match.assignedStudents || [];
+        const studentIndex = studentsList.findIndex(s => {
+          const sPhone = (s.phone || '').replace(/\D/g, '').replace(/^964/, '0');
+          return sPhone === cleanTarget;
+        });
+
+        let leaveButtonHtml = '';
+        if (studentIndex !== -1) {
+          leaveButtonHtml = `
+            <div style="margin-top: 12px; border-top: 1px dashed #fca5a5; padding-top: 10px; text-align: center;">
+              <button onclick="window.leaveCaptainLine('${match.id}', ${studentIndex})" style="background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; padding: 8px 12px; border-radius: 8px; font-weight: bold; font-size: 11px; cursor: pointer; width: 100%;">
+                ⚠️ مغادرة الخط وحذف الكابتن من حسابي
+              </button>
+            </div>
+          `;
+        }
+
+        resultDiv.innerHTML = `
+          <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:12px; font-size:12px; line-height:1.7;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px; border-bottom: 1px solid #dcfce7; padding-bottom: 6px;">
+              <img src="${captainImg}" alt="صورة الكابتن" style="width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 2px solid #009663;">
+              <div>
+                <div style="font-weight:bold; color:#009663; font-size:13px;">✅ تم العثور على كابتن الخط</div>
+                <div style="font-size:11px; color:#475569;">${safeCaptainName}</div>
+              </div>
+            </div>
+            <b>📱 رقم الهاتف:</b> ${safeCaptainPhone}<br>
+            <b>🚙 نوع السيارة ولونها:</b> ${safeCarInfo}<br>
+            <b>📍 نقطة الانطلاق:</b> ${safeArea}<br>
+            <b>🎓 الوجهة:</b> ${safeDest}<br>
+            <div style="margin-top:10px; text-align:center;">
+              <a href="${waLink}" target="_blank" style="display:inline-block; background:#009663; color:#fff; padding:6px 14px; border-radius:6px; font-weight:bold; text-decoration:none; font-size:11px;">
+                💬 تواصل مع الكابتن عبر الواتساب
+              </a>
+            </div>
+            ${leaveButtonHtml}
+          </div>
+        `;
+      } else {
+        resultDiv.innerHTML = `
+          <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:10px; padding:12px; font-size:12px; color:#991b1b; text-align:center;">
+            ❌ لم يتم العثور على كابتن معين لهذا الرقم حتى الآن أو تم حذف الكابتن من حسابك.<br>
+            <span style="font-size:11px; color:#b91c1c;">يرجى التأكد من إدخال الرقم الصحيح المسجل في التطبيق.</span>
+          </div>
+        `;
+      }
+    } else {
+      resultDiv.innerHTML = `<p style="font-size:12px; color:#ef4444; text-align:center;">حدث خطأ في الاتصال بقاعدة البيانات.</p>`;
+    }
+  }
+
+  function openBookingModal(serviceName) {
+    selectedService = serviceName;
+    document.getElementById('modalTitle').innerText = 'طلب: ' + serviceName;
+    userLocationUrl = '';
+    const destLabel = document.getElementById('destLabel');
+    const custUniv = document.getElementById('custUniv');
+    const captainFields = document.getElementById('captainExtraFields');
+    const custGovernorate = document.getElementById('custGovernorate');
+    const custCity = document.getElementById('custCity');
+
+    custGovernorate.value = '';
+    custCity.value = '';
+    custUniv.value = '';
+
+    if (serviceName === 'خط مدرسة') {
+      destLabel.innerText = 'اسم المدرسة (الوجهة)';
+      custUniv.placeholder = 'أدخل اسم المدرسة بوضوح...';
+      captainFields.style.display = 'none';
+    } else if (serviceName === 'تسجيل كابتن') {
+      destLabel.innerText = 'نقطة الوصول أو الخطوط المتاحة';
+      custUniv.placeholder = 'مثال: جامعة الفلوجة / مدارس الفلوجة';
+      captainFields.style.display = 'block';
+    } else {
+      destLabel.innerText = 'اسم الجامعة والكلية (الوجهة)';
+      custUniv.placeholder = 'أدخل اسم الجامعة والكلية...';
+      captainFields.style.display = 'none';
+    }
+    document.getElementById('bookingModal').style.display = 'flex';
+  }
+
+  function closeBookingModal() {
+    document.getElementById('bookingModal').style.display = 'none';
+  }
+
+  function getCurrentLocation() {
+    const btn = document.getElementById('locBtn');
+    if (navigator.geolocation) {
+      btn.innerText = 'جاري التحديد... ⏳';
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          userLocationUrl = `https://maps.google.com/?q=${pos.coords.latitude},${pos.coords.longitude}`;
+          btn.innerText = 'تم تحديد موقعك بنجاح ✅';
+          btn.style.background = '#d1fae5';
+        },
+        () => {
+          document.getElementById('gpsAlertModal').style.display = 'flex';
+          btn.innerText = 'تحديد موقعي التلقائي 📍';
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    }
+  }
+
+  function closeGpsAlert() { document.getElementById('gpsAlertModal').style.display = 'none'; }
+  function retryLocation() { closeGpsAlert(); getCurrentLocation(); }
+
+  async function submitBooking() {
+    const name = document.getElementById('custName').value.trim() || 'غير محدد';
+    const phone = document.getElementById('custPhone').value.trim() || 'غير محدد';
+    const governorate = document.getElementById('custGovernorate').value.trim() || 'غير محدد';
+    const city = document.getElementById('custCity').value.trim() || 'غير محدد';
+    const area = `${governorate} - ${city}`;
+    const univ = document.getElementById('custUniv').value.trim() || 'غير محدد';
+    const shift = document.getElementById('custShift').value;
+    const car = selectedService === 'تسجيل كابتن' ? document.getElementById('captainCarInfo').value.trim() : '';
+
+    let serialNumber = '';
+    if (selectedService === 'تسجيل كابتن') {
+      serialNumber = 'MSR-C' + Math.floor(1000 + Math.random() * 9000);
+    }
+
+    const bookingData = { 
+      serviceType: selectedService, 
+      fullName: name, 
+      phone,
+      governorate,
+      city,
+      area, 
+      locationUrl: userLocationUrl, 
+      destination: univ, 
+      shift, 
+      carInfo: car,
+      serialNumber,
+      imageUrl: GITHUB_RAW_BASE + "1788057831817.jpg",
+      status: 'new',
+      subscriptionStatus: 'pending'
+    };
+
+    if (typeof window.saveBookingToFirestore === 'function') {
+      await window.saveBookingToFirestore(bookingData);
+    }
+
+    let msg = `مرحباً، طلب (${encodeURIComponent(selectedService)}):%0A👤 *الاسم:* ${encodeURIComponent(name)}%0A📱 *الواتساب:* ${encodeURIComponent(phone)}%0A🏛️ *المحافظة:* ${encodeURIComponent(governorate)}%0A🏙️ *المدينة:* ${encodeURIComponent(city)}%0A🗺️ *اللوكيشن:* ${encodeURIComponent(userLocationUrl)}%0A🎓 *الوجهة:* ${encodeURIComponent(univ)}`;
+    if (car) msg += `%0A🚙 *السيارة:* ${encodeURIComponent(car)}`;
+    if (serialNumber) msg += `%0A🔢 *الرقم التسلسلي:* ${encodeURIComponent(serialNumber)}`;
+
+    window.open(`https://wa.me/9647763920607?text=${msg}`, '_blank');
+    closeBookingModal();
+  }
+
+  function shareApp() {
+    if (navigator.share) {
+      navigator.share({ title: 'تطبيق مسار', text: 'احجز خطك عبر تطبيق مسار!', url: window.location.href }).catch(() => {});
+    } else {
+      navigator.clipboard.writeText(window.location.href);
+      alert('تم نسخ الرابط!');
+    }
+  }
+
+  function normalizeArabic(str) {
+    if (!str) return '';
+    return str.toString()
+      .toLowerCase()
+      .replace(/[أإآ]/g, 'ا')
+      .replace(/ة/g, 'ه')
+      .replace(/ى/g, 'ي')
+      .trim();
+  }
+
+  function filterAdminList() {
+    const query = normalizeArabic(document.getElementById('adminSearchInput').value);
+    const list = window.cachedAdminData || [];
+
+    if (!query) {
+      renderAdminItems(list);
+      return;
+    }
+
+    const filtered = list.filter(item => {
+      const name = normalizeArabic(item.fullName);
+      const phone = normalizeArabic(item.phone);
+      const gov = normalizeArabic(item.governorate);
+      const city = normalizeArabic(item.city);
+      const area = normalizeArabic(item.area);
+      const dest = normalizeArabic(item.destination);
+      const car = normalizeArabic(item.carInfo);
+      const serial = normalizeArabic(item.serialNumber);
+      return name.includes(query) || phone.includes(query) || gov.includes(query) || city.includes(query) || area.includes(query) || dest.includes(query) || car.includes(query) || serial.includes(query);
+    });
+
+    renderAdminItems(filtered);
+  }
+
+  function toggleCaptainStudents(captainId) {
+    const el = document.getElementById(`captain-students-${captainId}`);
+    if (el) {
+      el.style.display = el.style.display === 'block' ? 'none' : 'block';
+    }
+  }
+
+  function renderAdminItems(items) {
+    const container = document.getElementById('adminListContainer');
+    if (!items || items.length === 0) {
+      container.innerHTML = `<p style="text-align:center; font-size:12px; color:#64748b; padding:20px;">لا توجد سجلات مسجلة في هذا القسم.</p>`;
+      return;
+    }
+
+    let html = '';
+    items.forEach(item => {
+      const status = item.status || 'new';
+      let statusBadge = '<span class="admin-status-badge status-new">🔴 جديد</span>';
+      if (status === 'completed') statusBadge = '<span class="admin-status-badge status-completed">🔵 مكتمل</span>';
+      if (status === 'active') statusBadge = '<span class="admin-status-badge status-active-badge">🟢 نشط</span>';
+      if (status === 'banned') statusBadge = '<span class="admin-status-badge status-banned">⛔ محظور</span>';
+
+      const safeName = escapeHtml(item.fullName || 'بدون اسم');
+      const safePhone = escapeHtml(item.phone || 'غير محدد');
+      const safeGov = escapeHtml(item.governorate || '');
+      const safeCity = escapeHtml(item.city || '');
+      const safeArea = escapeHtml(item.area || (safeGov && safeCity ? `${safeGov} - ${safeCity}` : 'غير محدد'));
+      const safeDest = escapeHtml(item.destination || 'غير محدد');
+      const safeCar = escapeHtml(item.carInfo || '');
+      const safeSerial = escapeHtml(item.serialNumber || 'لا يوجد');
+      const safeLocUrl = escapeHtml(item.locationUrl || '');
+      const captainImg = item.imageUrl || (GITHUB_RAW_BASE + "1788057831817.jpg");
+
+      let expiryText = 'غير محدد';
+      let isExpired = false;
+      if (item.subscriptionExpiryDate) {
+        const expDate = new Date(item.subscriptionExpiryDate);
+        expiryText = expDate.toLocaleDateString('ar-IQ', { year: 'numeric', month: 'numeric', day: 'numeric' });
+        if (expDate < new Date()) isExpired = true;
+      }
+
+      const isCaptainCol = item._col === 'captains';
+      const areaLabelText = isCaptainCol ? 'الانطلاق' : 'الموقع';
+      const assignedStudents = item.assignedStudents || [];
+
+      let studentsHtml = '';
+      if (isCaptainCol) {
+        if (assignedStudents.length === 0) {
+          studentsHtml = `<p style="font-size:11px; color:#94a3b8; text-align:center; padding:6px;">لا يوجد طلاب مضافون في هذا الخط بعد.</p>`;
+        } else {
+          assignedStudents.forEach((st, idx) => {
+            studentsHtml += `
+              <div class="student-item-row">
+                <div class="student-item-info">
+                  <b>${escapeHtml(st.name)}</b>
+                  <span style="color:#64748b;">${escapeHtml(st.type || 'طالب')} | 📱 ${escapeHtml(st.phone || 'بدون رقم')}</span>
+                </div>
+                <button class="student-remove-btn" onclick="window.removeStudentFromCaptain('${item.id}', ${idx})">❌ إلغاء</button>
+              </div>
+            `;
+          });
+        }
+      }
+
+      const waPhone = safePhone !== 'غير محدد' ? safePhone.replace(/\D/g, '') : '';
+      const waFormatted = waPhone ? (waPhone.startsWith('0') ? '964' + waPhone.slice(1) : waPhone) : '';
+      const waLink = waFormatted ? `https://wa.me/${waFormatted}` : '#';
+
+      html += `
+        <div class="admin-card">
+          <div class="admin-card-header">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              ${isCaptainCol ? `<img src="${captainImg}" alt="صورة الكابتن" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 1.5px solid #009663;">` : ''}
+              <div>
+                <span class="admin-card-title" 
+                      style="cursor: pointer; user-select: none; ${isCaptainCol ? 'color:#009663;' : ''}" 
+                      onclick="${isCaptainCol ? `toggleCaptainStudents('${item.id}')` : ''}"
+                      onmousedown="handlePressStart('${safeSerial}')" 
+                      onmouseup="handlePressEnd()" 
+                      onmouseleave="handlePressEnd()" 
+                      ontouchstart="handlePressStart('${safeSerial}')" 
+                      ontouchend="handlePressEnd()">
+                  ${safeName}
+                </span>
+                ${isCaptainCol ? `<br><span class="students-count-badge">👥 ${assignedStudents.length} طلاب</span>` : ''}
+              </div>
+            </div>
+            ${statusBadge}
+          </div>
+
+          <div class="admin-card-info">
+            <div class="info-row">
+              📱 <b>الواتساب:</b> 
+              ${waFormatted ? `<a href="${waLink}" target="_blank" class="wa-quick-btn">${safePhone} 💬</a>` : safePhone}
+            </div>
+            <div class="info-row">📍 <b>${areaLabelText}:</b> ${safeArea} | 🎓 <b>الوجهة:</b> ${safeDest}</div>
+            ${safeCar ? `<div class="info-row">🚙 <b>السيارة:</b> ${safeCar}</div>` : ''}
+            ${safeSerial !== 'لا يوجد' ? `<div class="info-row">🔢 <b>الرقم التسلسلي:</b> <code>${safeSerial}</code></div>` : ''}
+            ${isCaptainCol ? `
+              <div class="sub-expiry-box ${isExpired ? 'expired' : 'active'}">
+                ⏳ <b>انتهاء الاشتراك الشهري:</b> ${expiryText}
+              </div>
+            ` : ''}
+            ${safeLocUrl ? `<a href="${safeLocUrl}" target="_blank" class="gps-link">📍 فتح الموقع بخرائط Google</a>` : ''}
+          </div>
+
+          ${isCaptainCol ? `
+            <div class="captain-students-box" id="captain-students-${item.id}">
+              <div class="captain-students-title">
+                <span>👥 الطلاب المنضمون في الخط (${assignedStudents.length}):</span>
+                <button class="btn-add-student-sm" onclick="window.openAssignStudentModal('${item.id}')">➕ إضافة طالب</button>
+              </div>
+              ${studentsHtml}
+            </div>
+          ` : ''}
+
+          <div class="admin-card-actions">
+            <div class="action-row">
+              <span class="action-label">الحالة:</span>
+              <button class="admin-btn btn-status-new" onclick="window.updateStatus('${item._col}', '${item.id}', 'new')">🔴 جديد</button>
+              <button class="admin-btn btn-status-done" onclick="window.updateStatus('${item._col}', '${item.id}', 'completed')">🔵 مكتمل</button>
+              <button class="admin-btn btn-status-ban" onclick="window.updateStatus('${item._col}', '${item.id}', 'banned')">⛔ حظر</button>
+            </div>
+
+            ${isCaptainCol ? `
+              <div class="action-row">
+                <span class="action-label">الذكاء:</span>
+                <button class="btn-ai-match" onclick="openAiSmartMatchModal('${item.id}', '${escapeHtml(item.area)}', '${escapeHtml(item.destination)}')">
+                  🤖 المطابقة الذكية بالذكاء الاصطناعي
+                </button>
+              </div>
+              <div class="action-row">
+                <span class="action-label">الاشتراك:</span>
+                <button class="admin-btn btn-status-active-btn" onclick="window.activateCaptainWithSubscription('${item.id}')">🟢 تفعيل (30 يوم)</button>
+                <button class="admin-btn btn-renew" onclick="window.renewCaptainSubscription('${item.id}', '${item.subscriptionExpiryDate || ''}')">🔄 تجديد شهر</button>
+              </div>
+              <div class="action-row">
+                <span class="action-label">الخط:</span>
+                <button class="admin-btn btn-students-toggle" onclick="toggleCaptainStudents('${item.id}')">👥 طلاب الخط (${assignedStudents.length})</button>
+                <button class="admin-btn" style="background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0;" onclick="window.openAssignStudentModal('${item.id}')">➕ إضافة طالب</button>
+              </div>
+            ` : ''}
+
+            <div class="action-row">
+              <span class="action-label">خيارات:</span>
+              <button class="admin-btn btn-edit" onclick="window.promptEditName('${item._col}', '${item.id}', '${safeName}')">✏️ تعديل الاسم</button>
+              <button class="admin-btn" style="background:#fee2e2; color:#b91c1c; border:1px solid #fecaca;" onclick="window.deleteDocumentPermanently('${item._col}', '${item.id}')">🗑️ حذف نهائي</button>
+            </div>
+          </div>
+        </div>
+      `;
+    });
+
+    container.innerHTML = html;
+  }
+
+  window.renderAdminItems = renderAdminItems;
+
+  function closeAssignStudentModal() {
+    document.getElementById('assignStudentModal').style.display = 'none';
+    activeCaptainIdForAssign = null;
+  }
+
+  window.closeAssignStudentModal = closeAssignStudentModal;
+
+  window.openAssignStudentModal = (captainId) => {
+    activeCaptainIdForAssign = captainId;
+    document.getElementById('manualStudentName').value = '';
+    document.getElementById('manualStudentPhone').value = '';
+    document.getElementById('assignStudentModal').style.display = 'flex';
+  };
+
+  window.submitAssignStudent = async () => {
+    if (!activeCaptainIdForAssign) return;
+    const name = document.getElementById('manualStudentName').value.trim();
+    const phone = document.getElementById('manualStudentPhone').value.trim();
+    const type = document.getElementById('manualStudentType').value;
+
+    if (!name || !phone) {
+      alert('يرجى إدخال اسم الطالب ورقم الهاتف.');
+      return;
+    }
+
+    if (typeof window.addStudentManuallyToCaptainDb === 'function') {
+      const success = await window.addStudentManuallyToCaptainDb(activeCaptainIdForAssign, {
+        name,
+        phone,
+        type,
+        addedAt: new Date().toISOString()
+      });
+      if (success) {
+        closeAssignStudentModal();
+        if (typeof window.loadAdminCategory === 'function') {
+          window.loadAdminCategory(window.currentAdminCategory || 'captains_all');
+        }
+      }
+    }
+  };
+
+  function calculateAiMatchScore(captainArea, captainDest, studentArea, studentDest) {
+    const cArea = normalizeArabic(captainArea);
+    const cDest = normalizeArabic(captainDest);
+    const sArea = normalizeArabic(studentArea);
+    const sDest = normalizeArabic(studentDest);
+
+    let score = 0;
+
+    if (sDest === cDest || cDest.includes(sDest) || sDest.includes(cDest)) {
+      score += 50;
+    } else {
+      const cDestWords = cDest.split(/\s+/);
+      const sDestWords = sDest.split(/\s+/);
+      let commonDestWords = cDestWords.filter(w => w.length > 2 && sDestWords.includes(w));
+      if (commonDestWords.length > 0) {
+        score += 35;
+      }
+    }
+
+    if (sArea === cArea || cArea.includes(sArea) || sArea.includes(cArea)) {
+      score += 40;
+    } else {
+      const cAreaWords = cArea.split(/\s+/);
+      const sAreaWords = sArea.split(/\s+/);
+      let commonAreaWords = cAreaWords.filter(w => w.length > 2 && sAreaWords.includes(w));
+      if (commonAreaWords.length > 0) {
+        score += 25;
+      }
+    }
+
+    score += 10;
+    return Math.min(score, 99);
+  }
+
+  async function openAiSmartMatchModal(captainId, captainArea, captainDestination) {
+    activeCaptainForAiMatch = captainId;
+    const container = document.getElementById('aiSmartMatchListContainer');
+    const assignAllBtn = document.getElementById('aiAssignAllBtn');
+    const titleInfo = document.getElementById('aiSmartMatchInfoTitle');
+
+    titleInfo.innerHTML = `جاري تشغيل محرك الذكاء الاصطناعي لتحليل مسار الخط <b>(${captainArea} ⬅️ ${captainDestination})</b>... 🤖⏳`;
+    container.innerHTML = `<p style="text-align:center; font-size:11px; color:#7c3aed; padding:20px;">جاري معالجة البيانات واستخراج نسب التوافق...</p>`;
+    assignAllBtn.style.display = 'none';
+    document.getElementById('aiSmartMatchModal').style.display = 'flex';
+
+    if (typeof window.fetchAllUnassignedStudentsForAi === 'function') {
+      const allUnassigned = await window.fetchAllUnassignedStudentsForAi();
+      
+      currentAiMatches = allUnassigned.map(student => {
+        const matchScore = calculateAiMatchScore(captainArea, captainDestination, student.area, student.destination);
+        return { ...student, matchScore };
+      }).filter(st => st.matchScore >= 40)
+        .sort((a, b) => b.matchScore - a.matchScore);
+
+      if (currentAiMatches.length === 0) {
+        titleInfo.innerHTML = `لم يجد محرك الذكاء الاصطناعي طلاباً مطابقين لمسار هذا الكابتن حالياً.`;
+        container.innerHTML = `<p style="text-align:center; font-size:11px; color:#ef4444; padding:20px;">لا توجد مطابقات ذكية متاحة.</p>`;
+      } else {
+        titleInfo.innerHTML = `عثر الذكاء الاصطناعي على <b>(${currentAiMatches.length})</b> طالباً مطابقاً لخط سير الكابتن مرتبين حسب نسبة التوافق:`;
+        let listHtml = '';
+        currentAiMatches.forEach((st, idx) => {
+          let badgeColor = '#059669';
+          if (st.matchScore < 70) badgeColor = '#d97706';
+
+          listHtml += `
+            <div class="student-item-row" style="margin-bottom: 8px; border-left: 4px solid ${badgeColor};">
+              <div class="student-item-info">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+                  <b style="color: #0f172a; font-size: 12px;">${escapeHtml(st.fullName)}</b>
+                  <span style="background: ${badgeColor}; color: #fff; font-size: 10px; padding: 2px 6px; border-radius: 6px; font-weight: bold;">
+                    🤖 توافق ${st.matchScore}%
+                  </span>
+                </div>
+                <span style="color:#475569; font-size:10px;">📍 الانطلاق: ${escapeHtml(st.area)} | 🎓 الوجهة: ${escapeHtml(st.destination)}</span><br>
+                <span style="color:#64748b; font-size:10px;">📱 ${escapeHtml(st.phone)}</span>
+              </div>
+              <button class="btn-add-student-sm" style="background: #7c3aed;" onclick="window.assignSingleAiMatchStudent('${st.id}', '${st._col}', ${idx})">ربط ذكي ➕</button>
+            </div>
+          `;
+        });
+        container.innerHTML = listHtml;
+        assignAllBtn.style.display = 'block';
+      }
+    }
+  }
+
+  function closeAiSmartMatchModal() {
+    document.getElementById('aiSmartMatchModal').style.display = 'none';
+    activeCaptainForAiMatch = null;
+    currentAiMatches = [];
+  }
+
+  // --- دوال المطابقة الشاملة الذكية (عرض رقم الهاتف، الانطلاق، الوجهة، وقائمة الطلاب سويةً) ---
+  async function openGlobalAiSmartMatchModal() {
+    const container = document.getElementById('globalAiMatchListContainer');
+    const assignAllBtn = document.getElementById('globalAiAssignAllBtn');
+    const titleInfo = document.getElementById('globalAiInfoTitle');
+
+    titleInfo.innerHTML = `🤖 جاري تحليل مسارات كافة الكباتن والطلاب غير الموزعين وعرض المطابقات... ⏳`;
+    container.innerHTML = `<p style="text-align:center; font-size:11px; color:#7c3aed; padding:20px;">جاري معالجة المطابقات الشاملة...</p>`;
+    assignAllBtn.style.display = 'none';
+    document.getElementById('globalAiSmartMatchModal').style.display = 'flex';
+
+    if (typeof window.fetchAllCaptainsAndStudentsForGlobalAi === 'function') {
+      const { captains, unassignedStudents } = await window.fetchAllCaptainsAndStudentsForGlobalAi();
+      
+      const captainMap = {};
+
+      captains.forEach(captain => {
+        const matchedStudents = [];
+        unassignedStudents.forEach(student => {
+          const score = calculateAiMatchScore(captain.area, captain.destination, student.area, student.destination);
+          if (score >= 45) {
+            matchedStudents.push({
+              studentDocId: student.id,
+              studentCol: student._col,
+              studentName: student.fullName || 'طالب',
+              studentPhone: student.phone || '',
+              studentArea: student.area || '',
+              studentDest: student.destination || '',
+              score
+            });
+          }
+        });
+
+        if (matchedStudents.length > 0) {
+          matchedStudents.sort((a, b) => b.score - a.score);
+          captainMap[captain.id] = {
+            captainId: captain.id,
+            captainName: captain.fullName || 'كابتن',
+            captainPhone: captain.phone || 'غير محدد',
+            captainArea: captain.area || 'غير محدد',
+            captainDest: captain.destination || 'غير محدد',
+            students: matchedStudents
+          };
+        }
+      });
+
+      const groupedCaptains = Object.values(captainMap);
+
+      if (groupedCaptains.length === 0) {
+        titleInfo.innerHTML = `لم يتم العثور على مطابقات كافية بين الكباتن والطلاب حالياً.`;
+        container.innerHTML = `<p style="text-align:center; font-size:11px; color:#ef4444; padding:20px;">لا توجد نتائج مطابقة متاحة.</p>`;
+      } else {
+        titleInfo.innerHTML = `عثر الذكاء الاصطناعي على مطابقات لـ <b>(${groupedCaptains.length})</b> كابتن مع الطلاب المتوافقين:`;
+        let html = '';
+        groupedCaptains.forEach(group => {
+          const safeCaptainPhone = escapeHtml(group.captainPhone);
+          const cleanCapPhone = safeCaptainPhone.replace(/\D/g, '');
+          const waCapLink = cleanCapPhone ? `https://wa.me/${cleanCapPhone.startsWith('0') ? '964' + cleanCapPhone.slice(1) : cleanCapPhone}` : '#';
+
+          html += `
+            <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; margin-bottom: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.03);">
+              <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px; margin-bottom: 8px;">
+                <div>
+                  <b style="color: #009663; font-size: 13px;">🚙 الكابتن: ${escapeHtml(group.captainName)}</b>
+                  <div style="font-size: 11px; color: #475569; margin-top: 2px;">
+                    📱 الهاتف: <a href="${waCapLink}" target="_blank" style="color: #16a34a; font-weight: bold; text-decoration: none;">${safeCaptainPhone} 💬</a>
+                  </div>
+                </div>
+                <div style="text-align: left; font-size: 10px; color: #64748b;">
+                  📍 الانطلاق: <b>${escapeHtml(group.captainArea)}</b><br>
+                  🎓 الوجهة: <b>${escapeHtml(group.captainDest)}</b>
+                </div>
+              </div>
+
+              <div style="font-size: 11px; font-weight: bold; color: #0f172a; margin-bottom: 6px;">
+                👥 قائمة الطلاب المتوافقين مع الكابتن سويةً (${group.students.length}):
+              </div>
+          `;
+
+          group.students.forEach(st => {
+            let badgeColor = '#059669';
+            if (st.score < 70) badgeColor = '#d97706';
+
+            html += `
+              <div class="student-item-row" style="margin-bottom: 6px; border-left: 4px solid ${badgeColor}; display: flex; justify-content: space-between; align-items: center;">
+                <div class="student-item-info">
+                  <b>${escapeHtml(st.studentName)}</b> (${escapeHtml(st.studentPhone)})
+                  <span style="color:#64748b; font-size:10px;">انطلاق: ${escapeHtml(st.studentArea)} | وجهة: ${escapeHtml(st.studentDest)}</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <span style="background: ${badgeColor}; color: #fff; font-size: 10px; padding: 2px 6px; border-radius: 6px; font-weight: bold;">
+                    ${st.score}%
+                  </span>
+                  <button class="btn-add-student-sm" style="background: #7c3aed;" onclick="window.executeSingleGlobalAiAssign('${group.captainId}', '${st.studentDocId}', '${st.studentCol}', '${escapeHtml(st.studentName)}', '${escapeHtml(st.studentPhone)}')">ربط ✅</button>
+                </div>
+              </div>
+            `;
+          });
+
+          html += `</div>`;
+        });
+
+        container.innerHTML = html;
+        assignAllBtn.style.display = 'block';
+        window.currentGlobalGroupedMatches = groupedCaptains;
+      }
+    }
+  }
+
+  function closeGlobalAiSmartMatchModal() {
+    document.getElementById('globalAiSmartMatchModal').style.display = 'none';
+    window.currentGlobalGroupedMatches = [];
+  }
+
+  window.executeSingleGlobalAiAssign = async (captainId, studentDocId, studentCol, studentName, studentPhone) => {
+    if (typeof window.assignStudentToCaptainDb === 'function') {
+      const success = await window.assignStudentToCaptainDb(captainId, {
+        name: studentName,
+        phone: studentPhone,
+        type: studentCol === 'university_students' ? 'طالب جامعة' : 'طالب مدرسة',
+        addedAt: new Date().toISOString()
+      }, studentDocId, studentCol);
+
+      if (success) {
+        alert(`✅ تم ربط الطالب (${studentName}) بالكابتن بنجاح!`);
+        openGlobalAiSmartMatchModal();
+      }
+    }
+  };
+
+  async function globalAiAssignAllMatches() {
+    const groupedCaptains = window.currentGlobalGroupedMatches || [];
+    if (groupedCaptains.length === 0) {
+      alert('لا توجد مطابقات متاحة للربط الفوري.');
+      return;
+    }
+    if (!confirm(`هل أنت متأكد من ربط جميع الطلاب المطابقين بجميع الكباتن دفعة واحدة تلقائياً؟`)) return;
+
+    for (const group of groupedCaptains) {
+      for (const st of group.students) {
+        if (st.score >= 70 && typeof window.assignStudentToCaptainDb === 'function') {
+          await window.assignStudentToCaptainDb(group.captainId, {
+            name: st.studentName,
+            phone: st.studentPhone,
+            type: st.studentCol === 'university_students' ? 'طالب جامعة' : 'طالب مدرسة',
+            addedAt: new Date().toISOString()
+          }, st.studentDocId, st.studentCol);
+        }
+      }
+    }
+
+    alert('✅ تمت عملية المطابقة والربط الشامل لجميع الكباتن والطلاب بنجاح تام!');
+    closeGlobalAiSmartMatchModal();
+    if (typeof window.loadAdminCategory === 'function') {
+      window.loadAdminCategory(window.currentAdminCategory || 'captains_all');
+    }
+  }
+
+  window.assignSingleAiMatchStudent = async (studentDocId, studentCol, studentIndex) => {
+    const student = currentAiMatches[studentIndex];
+    if (!student || !activeCaptainForAiMatch) return;
+
+    if (typeof window.assignStudentToCaptainDb === 'function') {
+      const success = await window.assignStudentToCaptainDb(activeCaptainForAiMatch, {
+        name: student.fullName,
+        phone: student.phone,
+        type: student._col === 'university_students' ? 'طالب جامعة' : 'طالب مدرسة',
+        addedAt: new Date().toISOString()
+      }, studentDocId, studentCol);
+
+      if (success) {
+        currentAiMatches.splice(studentIndex, 1);
+        openAiSmartMatchModal(activeCaptainForAiMatch, student.area, student.destination);
+      }
+    }
+  };
+
+  async function aiAssignAllTopMatches() {
+    const topMatches = currentAiMatches.filter(st => st.matchScore >= 70);
+    if (!activeCaptainForAiMatch || topMatches.length === 0) return;
+    if (!confirm(`هل أنت متأكد من ربط جميع الطلاب المطابقين ذكياً (نسبة 70% فأكثر، عددهم ${topMatches.length} طالب) بخط الكابتن دفعة واحدة؟`)) return;
+
+    for (const student of topMatches) {
+      if (typeof window.assignStudentToCaptainDb === 'function') {
+        await window.assignStudentToCaptainDb(activeCaptainForAiMatch, {
+          name: student.fullName,
+          phone: student.phone,
+          type: student._col === 'university_students' ? 'طالب جامعة' : 'طالب مدرسة',
+          addedAt: new Date().toISOString()
+        }, student.id, student._col);
+      }
+    }
+
+    alert('تمت المطابقة والربط الذكي لجميع الطلاب بنجاح! ✅🤖');
+    closeAiSmartMatchModal();
+    if (typeof window.loadAdminCategory === 'function') {
+      window.loadAdminCategory(window.currentAdminCategory || 'captains_all');
+    }
+  }
+
+  window.cachedActiveCaptainsData = [];
+
+  window.loadActiveCaptainsForUsers = async () => {
+    const container = document.getElementById('activeCaptainsListContainer');
+    container.innerHTML = `<p style="text-align:center; font-size:12px; color:#64748b; padding:20px;">جاري تحميل الكباتن النشطين... ⏳</p>`;
+
+    try {
+      if (typeof window.fetchActiveCaptainsFromDb === 'function') {
+        window.cachedActiveCaptainsData = await window.fetchActiveCaptainsFromDb();
+        renderActiveCaptainsItems(window.cachedActiveCaptainsData);
+      }
+    } catch (e) {
+      console.error(e);
+      container.innerHTML = `<p style="text-align:center; font-size:12px; color:#ef4444; padding:20px;">حدث خطأ أثناء تحميل الكباتن.</p>`;
+    }
+  };
+
+  function renderActiveCaptainsItems(items) {
+    const container = document.getElementById('activeCaptainsListContainer');
+    if (!items || items.length === 0) {
+      container.innerHTML = `<p style="text-align:center; font-size:12px; color:#64748b; padding:20px;">لا يوجد كباتن ذوو اشتراكات سارية يطابقون بحثك حالياً.</p>`;
+      return;
+    }
+
+    let html = '';
+    items.forEach(item => {
+      const safeName = escapeHtml(item.fullName || 'كابتن مسار');
+      const safeArea = escapeHtml(item.area || 'غير محدد');
+      const safeDest = escapeHtml(item.destination || 'غير محدد');
+      const safeCar = escapeHtml(item.carInfo || '');
+      const safeSerial = escapeHtml(item.serialNumber || 'غير محدد');
+      const safeLocUrl = escapeHtml(item.locationUrl || '');
+      const captainImg = item.imageUrl || (GITHUB_RAW_BASE + "1788057831817.jpg");
+
+      const waMessage = `مرحباً، أرغب بالحجز مع الكابتن:%0A👤 *الاسم:* ${encodeURIComponent(safeName)}%0A🔢 *الرمز التسلسلي:* ${encodeURIComponent(safeSerial)}`;
+
+      html += `
+        <div class="admin-card">
+          <div class="admin-card-header">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <img src="${captainImg}" alt="صورة الكابتن" style="width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 2px solid #009663;">
+              <div>
+                <span class="admin-card-title" 
+                      style="cursor: pointer; user-select: none;" 
+                      onmousedown="handlePressStart('${safeSerial}')" 
+                      onmouseup="handlePressEnd()" 
+                      onmouseleave="handlePressEnd()" 
+                      ontouchstart="handlePressStart('${safeSerial}')" 
+                      ontouchend="handlePressEnd()">
+                  ${safeName}
+                </span>
+                <div style="font-size: 10px; color: #64748b;">رمز الكابتن: ${safeSerial}</div>
+              </div>
+            </div>
+            <span class="admin-status-badge status-active-badge">🟢 كابتن مشترك</span>
+          </div>
+          <div class="admin-card-info">
+            📍 <b>نقطة الانطلاق:</b> ${safeArea}<br>
+            🎓 <b>نقطة الوصول / الخطوط:</b> ${safeDest}<br>
+            ${safeCar ? `🚙 <b>السيارة:</b> ${safeCar}<br>` : ''}
+            ${safeLocUrl ? `<a href="${safeLocUrl}" target="_blank" style="color:#009663; font-weight:bold;">📍 فتح الموقع بخرائط Google</a>` : ''}
+          </div>
+          <div class="admin-card-actions">
+            <a href="https://wa.me/9647763920607?text=${waMessage}" target="_blank" style="flex:1; text-align:center; background:#009663; color:#fff; padding:8px; border-radius:6px; font-size:11px; font-weight:bold; text-decoration:none;">تواصل عبر الواتساب 💬</a>
+          </div>
+        </div>
+      `;
+    });
+
+    container.innerHTML = html;
+  }
+
+  function filterActiveCaptainsList() {
+    const originQuery = normalizeArabic(document.getElementById('activeCaptainsOriginInput').value);
+    const destQuery = normalizeArabic(document.getElementById('activeCaptainsDestInput').value);
+    const keywordQuery = normalizeArabic(document.getElementById('activeCaptainsKeywordInput').value);
+    const list = window.cachedActiveCaptainsData || [];
+
+    if (!originQuery && !destQuery && !keywordQuery) {
+      renderActiveCaptainsItems(list);
+      return;
+    }
+
+    const filtered = list.filter(item => {
+      const name = normalizeArabic(item.fullName);
+      const phone = normalizeArabic(item.phone);
+      const area = normalizeArabic(item.area);
+      const dest = normalizeArabic(item.destination);
+      const car = normalizeArabic(item.carInfo);
+
+      let matchOrigin = true;
+      if (originQuery) {
+        matchOrigin = area.includes(originQuery) || name.includes(originQuery) || car.includes(originQuery) || phone.includes(originQuery);
+      }
+
+      let matchDest = true;
+      if (destQuery) {
+        matchDest = dest.includes(destQuery);
+      }
+
+      let matchKeyword = true;
+      if (keywordQuery) {
+        matchKeyword = name.includes(keywordQuery) || car.includes(keywordQuery);
+      }
+
+      return matchOrigin && matchDest && matchKeyword;
+    });
+
+    renderActiveCaptainsItems(filtered);
+  }
+</script>
+
+<!-- وحدة Firebase وإكمال الوظائف -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
+  import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, serverTimestamp, query, limit, getDoc } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
+  import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCnj7tHFzZtdgJFcRiA1dfoN83d0kQQtcM",
+    authDomain: "masar-a206f.firebaseapp.com",
+    projectId: "masar-a206f",
+    storageBucket: "masar-a206f.firebasestorage.app",
+    messagingSenderId: "8489563063",
+    appId: "1:8489563063:web:d93d5629a8750c925bee32",
+    measurementId: "G-X35Z17S8GM"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const auth = getAuth(app);
+
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      isAdminAuthenticated = true;
+    } else {
+      isAdminAuthenticated = false;
+      showTab('page-home', document.querySelectorAll('.nav-item')[0]);
+    }
+  });
+
+  function cleanPhone(p) {
+    if (!p) return '';
+    return p.toString().replace(/\D/g, '').replace(/^964/, '0');
+  }
+
+  window.cleanPhoneHelper = cleanPhone;
+
+  window.loginAdminFirebase = async (email, password) => {
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      return { success: true };
+    } catch (e) {
+      return { success: false, error: 'البريد أو كلمة المرور غير صحيحة' };
+    }
+  };
+
+  window.logoutAdmin = async () => {
+    await signOut(auth);
+    showTab('page-home', document.querySelectorAll('.nav-item')[0]);
+  };
+
+  window.saveBookingToFirestore = async (data) => {
+    try {
+      let colName = "captains";
+      if (data.serviceType === 'خط جامعة') colName = "university_students";
+      else if (data.serviceType === 'خط مدرسة') colName = "school_students";
+      await addDoc(collection(db, colName), { ...data, createdAt: serverTimestamp() });
+    } catch (e) {
+      console.error("Error saving booking:", e);
+    }
+  };
+
+  window.fetchCaptainForStudentPhone = async (rawPhone) => {
+    try {
+      const targetPhone = cleanPhone(rawPhone);
+      if (!targetPhone) return null;
+
+      const dismissedCaptainId = localStorage.getItem('masar_dismissed_captain_' + targetPhone);
+
+      const q = query(collection(db, "captains"), limit(100));
+      const querySnapshot = await getDocs(q);
+      let match = null;
+
+      querySnapshot.forEach((docSnap) => {
+        if (dismissedCaptainId && docSnap.id === dismissedCaptainId) {
+          return;
+        }
+        const data = docSnap.data();
+        const students = data.assignedStudents || [];
+        const isAssigned = students.some(s => cleanPhone(s.phone) === targetPhone);
+        if (isAssigned || cleanPhone(data.phone) === targetPhone) {
+          match = { id: docSnap.id, ...data };
+        }
+      });
+      return match;
+    } catch (e) {
+      console.error("Error fetching captain:", e);
+      return null;
+    }
+  };
+
+  window.leaveCaptainLine = async (captainId, studentIndex) => {
+    if (!confirm("⚠️ تنبيه تحذيري: هل أنت متأكد تماماً من رغبتك في مغادرة هذا الخط وإلغاء تعيين الكابتن من حسابك؟")) {
+      return;
+    }
+    try {
+      const inputPhone = document.getElementById('studentSearchPhone').value.trim();
+      const cleanTarget = cleanPhone(inputPhone);
+
+      const docRef = doc(db, "captains", captainId);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        const currentStudents = docSnap.data().assignedStudents || [];
+        if (studentIndex >= 0 && studentIndex < currentStudents.length) {
+          currentStudents.splice(studentIndex, 1);
+          await updateDoc(docRef, { assignedStudents: currentStudents });
+        }
+      }
+
+      if (cleanTarget) {
+        const collectionsToSearch = ["university_students", "school_students"];
+        for (const colName of collectionsToSearch) {
+          const qSnap = await getDocs(collection(db, colName));
+          qSnap.forEach(async (stDoc) => {
+            const stData = stDoc.data();
+            if (cleanPhone(stData.phone) === cleanTarget) {
+              await updateDoc(doc(db, colName, stDoc.id), { status: 'new' });
+            }
+          });
+        }
+        localStorage.setItem('masar_dismissed_captain_' + cleanTarget, captainId);
+      }
+
+      const resultDiv = document.getElementById('captainQueryResult');
+      resultDiv.innerHTML = `
+        <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:10px; padding:12px; font-size:12px; color:#991b1b; text-align:center;">
+          ❌ تم مغادرة الخط وإعادة حالة طلبك إلى (جديد) بنجاح.<br>
+          <span style="font-size:11px; color:#b91c1c;">ستظهر طلبياتك ضمن لوحة المشرفين للجدد.</span>
+        </div>
+      `;
+      alert("✅ تم مغادرة الخط بنجاح وإعادة حالة طلبك إلى جديد.");
+    } catch (e) {
+      console.error("Error leaving captain line:", e);
+      alert("حدث خطأ أثناء محاولة مغادرة الخط. يرجى المحاولة لاحقاً.");
+    }
+  };
+
+  window.removeStudentFromCaptain = async (captainId, studentIndex) => {
+    if (!confirm("⚠️ هل أنت متأكد من إزالة هذا الطالب من خط الكابتن؟ سيتم إعادة حالة الطالب إلى (جديد).")) {
+      return;
+    }
+    try {
+      const captainRef = doc(db, "captains", captainId);
+      const captainSnap = await getDoc(captainRef);
+      if (!captainSnap.exists()) return;
+
+      const captainData = captainSnap.data();
+      const students = captainData.assignedStudents || [];
+      if (studentIndex < 0 || studentIndex >= students.length) return;
+
+      const removedStudent = students[studentIndex];
+      const studentPhoneClean = cleanPhone(removedStudent.phone);
+
+      students.splice(studentIndex, 1);
+      await updateDoc(captainRef, { assignedStudents: students });
+
+      const collectionsToSearch = ["university_students", "school_students"];
+      for (const colName of collectionsToSearch) {
+        const qSnap = await getDocs(collection(db, colName));
+        qSnap.forEach(async (stDoc) => {
+          const stData = stDoc.data();
+          if (cleanPhone(stData.phone) === studentPhoneClean) {
+            await updateDoc(doc(db, colName, stDoc.id), { status: 'new' });
+          }
+        });
+      }
+
+      alert("✅ تمت إزالة الطالب بنجاح وإعادة حالته إلى جديد.");
+      if (typeof window.loadAdminCategory === 'function') {
+        window.loadAdminCategory(window.currentAdminCategory || 'captains_all');
+      }
+    } catch (e) {
+      console.error("Error removing student:", e);
+      alert("حدث خطأ أثناء إزالة الطالب.");
+    }
+  };
+
+  window.loadAdminCategory = async (cat) => {
+    const container = document.getElementById('adminListContainer');
+    container.innerHTML = `<p style="text-align:center; font-size:12px; color:#64748b; padding:20px;">جاري تحميل البيانات... ⏳</p>`;
+
+    try {
+      let items = [];
+      if (cat === 'captains_all') {
+        const snap = await getDocs(collection(db, "captains"));
+        snap.forEach(d => items.push({ id: d.id, _col: 'captains', ...d.data() }));
+      } else if (cat === 'captains') {
+        const snap = await getDocs(collection(db, "captains"));
+        snap.forEach(d => {
+          const data = d.data();
+          if (!data.status || data.status === 'new') items.push({ id: d.id, _col: 'captains', ...data });
+        });
+      } else if (cat === 'completed_captains') {
+        const snap = await getDocs(collection(db, "captains"));
+        snap.forEach(d => {
+          const data = d.data();
+          if (data.status === 'completed') items.push({ id: d.id, _col: 'captains', ...data });
+        });
+      } else if (cat === 'active_captains') {
+        const snap = await getDocs(collection(db, "captains"));
+        snap.forEach(d => {
+          const data = d.data();
+          if (data.status === 'active' && data.subscriptionExpiryDate && new Date(data.subscriptionExpiryDate) > new Date()) {
+            items.push({ id: d.id, _col: 'captains', ...data });
+          }
+        });
+      } else if (cat === 'university_all') {
+        const snap = await getDocs(collection(db, "university_students"));
+        snap.forEach(d => items.push({ id: d.id, _col: 'university_students', ...d.data() }));
+      } else if (cat === 'university_students') {
+        const snap = await getDocs(collection(db, "university_students"));
+        snap.forEach(d => {
+          const data = d.data();
+          if (!data.status || data.status === 'new') items.push({ id: d.id, _col: 'university_students', ...data });
+        });
+      } else if (cat === 'completed_university_students') {
+        const snap = await getDocs(collection(db, "university_students"));
+        snap.forEach(d => {
+          const data = d.data();
+          if (data.status === 'completed') items.push({ id: d.id, _col: 'university_students', ...data });
+        });
+      } else if (cat === 'school_all') {
+        const snap = await getDocs(collection(db, "school_students"));
+        snap.forEach(d => items.push({ id: d.id, _col: 'school_students', ...d.data() }));
+      } else if (cat === 'school_students') {
+        const snap = await getDocs(collection(db, "school_students"));
+        snap.forEach(d => {
+          const data = d.data();
+          if (!data.status || data.status === 'new') items.push({ id: d.id, _col: 'school_students', ...data });
+        });
+      } else if (cat === 'completed_school_students') {
+        const snap = await getDocs(collection(db, "school_students"));
+        snap.forEach(d => {
+          const data = d.data();
+          if (data.status === 'completed') items.push({ id: d.id, _col: 'school_students', ...data });
+        });
+      } else if (cat === 'banned') {
+        const cols = ["captains", "university_students", "school_students"];
+        for (const col of cols) {
+          const snap = await getDocs(collection(db, col));
+          snap.forEach(d => {
+            const data = d.data();
+            if (data.status === 'banned') items.push({ id: d.id, _col: col, ...data });
+          });
+        }
+      }
+
+      window.cachedAdminData = items;
+      renderAdminItems(items);
+    } catch (e) {
+      console.error(e);
+      container.innerHTML = `<p style="text-align:center; font-size:12px; color:#ef4444; padding:20px;">حدث خطأ أثناء تحميل البيانات.</p>`;
+    }
+  };
+
+  window.updateStatus = async (col, id, newStatus) => {
+    try {
+      await updateDoc(doc(db, col, id), { status: newStatus });
+      window.loadAdminCategory(window.currentAdminCategory || 'captains_all');
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  window.deleteDocumentPermanently = async (col, id) => {
+    if (!confirm("⚠️ هل أنت متأكد من الحذف النهائي لهذا السجل؟")) return;
+    try {
+      await deleteDoc(doc(db, col, id));
+      window.loadAdminCategory(window.currentAdminCategory || 'captains_all');
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  window.promptEditName = async (col, id, currentName) => {
+    const newName = prompt("أدخل الاسم الجديد:", currentName);
+    if (!newName) return;
+    try {
+      await updateDoc(doc(db, col, id), { fullName: newName.trim() });
+      window.loadAdminCategory(window.currentAdminCategory || 'captains_all');
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  window.activateCaptainWithSubscription = async (id) => {
+    try {
+      const expDate = new Date();
+      expDate.setDate(expDate.getDate() + 30);
+      await updateDoc(doc(db, "captains", id), {
+        status: 'active',
+        subscriptionStatus: 'active',
+        subscriptionExpiryDate: expDate.toISOString()
+      });
+      alert("✅ تم تفعيل اشتراك الكابتن لمدة 30 يوماً بنجاح!");
+      window.loadAdminCategory(window.currentAdminCategory || 'captains_all');
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  window.renewCaptainSubscription = async (id, currentExpiry) => {
+    try {
+      let baseDate = new Date();
+      if (currentExpiry && new Date(currentExpiry) > baseDate) {
+        baseDate = new Date(currentExpiry);
+      }
+      baseDate.setDate(baseDate.getDate() + 30);
+      await updateDoc(doc(db, "captains", id), {
+        status: 'active',
+        subscriptionStatus: 'active',
+        subscriptionExpiryDate: baseDate.toISOString()
+      });
+      alert("🔄 تم تجديد اشتراك الكابتن لشهر إضافي بنجاح!");
+      window.loadAdminCategory(window.currentAdminCategory || 'captains_all');
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  window.addStudentManuallyToCaptainDb = async (captainId, studentObj) => {
+    try {
+      const docRef = doc(db, "captains", captainId);
+      const docSnap = await getDoc(docRef);
+      if (!docSnap.exists()) return false;
+
+      const currentStudents = docSnap.data().assignedStudents || [];
+      currentStudents.push(studentObj);
+      await updateDoc(docRef, { assignedStudents: currentStudents });
+      alert("✅ تمت إضافة الطالب لخط الكابتن بنجاح!");
+      return true;
+    } catch (e) {
+      console.error(e);
+      return false;
+    }
+  };
+
+  window.fetchAllUnassignedStudentsForAi = async () => {
+    const students = [];
+    const collections = ["university_students", "school_students"];
+    for (const col of collections) {
+      const snap = await getDocs(collection(db, col));
+      snap.forEach(d => {
+        const data = d.data();
+        if (!data.status || data.status === 'new') {
+          students.push({ id: d.id, _col: col, ...data });
+        }
+      });
+    }
+    return students;
+  };
+
+  window.fetchAllCaptainsAndStudentsForGlobalAi = async () => {
+    const captains = [];
+    const capSnap = await getDocs(collection(db, "captains"));
+    capSnap.forEach(d => {
+      const data = d.data();
+      if (data.status === 'active') {
+        captains.push({ id: d.id, ...data });
+      }
+    });
+
+    const unassignedStudents = await window.fetchAllUnassignedStudentsForAi();
+    return { captains, unassignedStudents };
+  };
+
+  window.assignStudentToCaptainDb = async (captainId, studentObj, studentDocId, studentCol) => {
+    try {
+      const captainRef = doc(db, "captains", captainId);
+      const capSnap = await getDoc(captainRef);
+      if (!capSnap.exists()) return false;
+
+      const currentStudents = capSnap.data().assignedStudents || [];
+      const alreadyExists = currentStudents.some(s => cleanPhone(s.phone) === cleanPhone(studentObj.phone));
+      if (!alreadyExists) {
+        currentStudents.push(studentObj);
+        await updateDoc(captainRef, { assignedStudents: currentStudents });
+      }
+
+      await updateDoc(doc(db, studentCol, studentDocId), { status: 'completed' });
+      return true;
+    } catch (e) {
+      console.error(e);
+      return false;
+    }
+  };
+
+  window.fetchActiveCaptainsFromDb = async () => {
+    const activeCaptains = [];
+    const snap = await getDocs(collection(db, "captains"));
+    snap.forEach(d => {
+      const data = d.data();
+      if (data.status === 'active' && data.subscriptionExpiryDate && new Date(data.subscriptionExpiryDate) > new Date()) {
+        activeCaptains.push({ id: d.id, ...data });
+      }
+    });
+    return activeCaptains;
+  };
+</script>
+
+</body>
+</html>
