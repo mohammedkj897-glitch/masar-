@@ -1,9 +1,16 @@
 {
-  "name": "تطبيق مسار النقل الجماعي",
+  "name": "تطبيق مسار",
   "short_name": "مسار",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#2563eb",
-  "icons": []
+  "theme_color": "#2196F3",
+  "description": "تطبيق لتنسيق النقل المدرسي والجامعي",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
 }
