@@ -1066,16 +1066,42 @@
     </div>
   </main>
 
-  <!-- الشاشة 2: الكباتن النشطون -->
+  <!-- الشاشة 2: الكباتن والخطوط النشطة (التعديل 1: إضافة فلتر المحافظات والفلترة الذكية) -->
   <main id="captainsView" class="view-section">
     <div style="font-size: 1.15rem; font-weight: 800; margin-bottom: 12px; display:flex; justify-content:space-between; align-items:center;">
       <span style="display:flex; align-items:center; gap:6px;">
-        <span class="material-icons-outlined" style="color:var(--primary);">directions_car</span> قائمة الكباتن النشطين
+        <span class="material-icons-outlined" style="color:var(--primary);">directions_car</span> قائمة الكباتن والخطوط
       </span>
       <span style="font-size:0.8rem; color:var(--primary); font-weight:700;" id="captainsCountLabel"></span>
     </div>
 
     <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px;">
+      <!-- قائمة اختيار المحافظة لتسهيل العثور على الخط حسب المحافظة ونقطة الانطلاق -->
+      <div class="search-box-wrapper" style="margin-bottom: 0;">
+        <select class="form-select search-input" id="capSearchGov" onchange="triggerCaptainsSearch()" style="padding-left: 38px;">
+          <option value="">جميع المحافظات (تحديد المحافظة)...</option>
+          <option value="بغداد">بغداد</option>
+          <option value="الأنبار">الأنبار</option>
+          <option value="أربيل">أربيل</option>
+          <option value="بابل">بابل</option>
+          <option value="البصرة">البصرة</option>
+          <option value="دهوك">دهوك</option>
+          <option value="الديوانية">الديوانية</option>
+          <option value="ديالى">ديالى</option>
+          <option value="ذي قار">ذي قار</option>
+          <option value="السليمانية">السليمانية</option>
+          <option value="صلاح الدين">صلاح الدين</option>
+          <option value="كركوك">كركوك</option>
+          <option value="كربلاء">كربلاء</option>
+          <option value="ميسان">ميسان</option>
+          <option value="المثنى">المثنى</option>
+          <option value="النجف">النجف</option>
+          <option value="نينوى">نينوى</option>
+          <option value="واسط">واسط</option>
+        </select>
+        <span class="material-icons-outlined search-icon">map</span>
+      </div>
+
       <div class="search-box-wrapper" style="margin-bottom: 0;">
         <input type="text" class="search-input" id="capSearchName" placeholder="البحث عن اسم الكابتن..." oninput="triggerCaptainsSearch()">
         <span class="material-icons-outlined search-icon">person_search</span>
@@ -1183,7 +1209,7 @@
     <div id="captainSettingsContainer"></div>
   </main>
 
-  <!-- الشاشة 6: لوحة المشرفين -->
+  <!-- الشاشة 6: لوحة المشرفين (التعديل 2: تحديث واجهة تقارير الذكاء الاصطناعي للمشرفين) -->
   <main id="adminView" class="view-section">
     <div class="admin-card-header">
       <div class="admin-title-box">
@@ -1224,13 +1250,13 @@
 
     <div class="ai-assistant-card">
       <div class="ai-assistant-header">
-        <span class="material-icons-outlined">auto_awesome</span> الذكاء الاصطناعي المساعد للمشرفين
+        <span class="material-icons-outlined">auto_awesome</span> تقارير تحليلات الذكاء الاصطناعي للمشرفين
       </div>
       <div class="ai-assistant-body" id="aiAssistantOutput">
-        أهلاً بك! انقر على الزر أدناه ليقوم الذكاء الاصطناعي بمسح ومطابقة جميع الطلاب الجدد مع الكباتن الذين يحملون تقريباً نفس وجهة الانطلاق والوصول لربطهم ببعض.
+        أهلاً بك! انقر على الزر أدناه ليقوم الذكاء الاصطناعي بتحليل قاعدة البيانات وتوليد تقارير شاملة عن المطابقات المقترحة، العجز في المناطق، ونسب إشغال الخطوط بدون ربط تلقائي.
       </div>
       <button class="ai-action-btn" onclick="runAdminAIAssistant()">
-        <span class="material-icons-outlined">psychology</span> مطابقة شاملة للطلاب والكباتن
+        <span class="material-icons-outlined">psychology</span> توليد تقارير التحليل الذكي
       </button>
     </div>
 
@@ -1682,32 +1708,14 @@
       }, 300);
     }
 
+    /* التعديل 1: تحسين جلب البيانات لدعم البحث التقريبي لجميع أشرطة البحث */
     async function loadCaptains(isNextPage = false) {
       if (isFetchingCaptains) return;
       if (isNextPage && !hasMoreCaptains) return;
       isFetchingCaptains = true;
 
       try {
-        const searchName = document.getElementById('capSearchName') ? document.getElementById('capSearchName').value.trim() : '';
-        const searchStart = document.getElementById('capSearchStart') ? document.getElementById('capSearchStart').value.trim() : '';
-        const searchTarget = document.getElementById('capSearchTarget') ? document.getElementById('capSearchTarget').value.trim() : '';
-        const adminSearch = (document.getElementById('adminView') && document.getElementById('adminView').classList.contains('active') && document.getElementById('adminSearchInput')) ? document.getElementById('adminSearchInput').value.trim() : '';
-
-        let query = db.collection("captains");
-
-        if (searchName) {
-          query = query.orderBy("name").startAt(searchName).endAt(searchName + "\uf8ff");
-        } else if (searchStart) {
-          query = query.orderBy("startLoc").startAt(searchStart).endAt(searchStart + "\uf8ff");
-        } else if (searchTarget) {
-          query = query.orderBy("targetLoc").startAt(searchTarget).endAt(searchTarget + "\uf8ff");
-        } else if (adminSearch) {
-          query = query.orderBy("name").startAt(adminSearch).endAt(adminSearch + "\uf8ff");
-        } else {
-          query = query.orderBy("createdAt", "desc");
-        }
-
-        query = query.limit(PAGE_LIMIT);
+        let query = db.collection("captains").orderBy("createdAt", "desc").limit(PAGE_LIMIT);
 
         if (isNextPage && lastCaptainDoc) {
           query = query.startAfter(lastCaptainDoc);
@@ -1758,16 +1766,7 @@
       isFetchingStudents = true;
 
       try {
-        const adminSearch = (document.getElementById('adminView') && document.getElementById('adminView').classList.contains('active') && document.getElementById('adminSearchInput')) ? document.getElementById('adminSearchInput').value.trim() : '';
-        let query = db.collection("students");
-
-        if (adminSearch) {
-          query = query.orderBy("name").startAt(adminSearch).endAt(adminSearch + "\uf8ff");
-        } else {
-          query = query.orderBy("createdAt", "desc");
-        }
-
-        query = query.limit(PAGE_LIMIT);
+        let query = db.collection("students").orderBy("createdAt", "desc").limit(PAGE_LIMIT);
 
         if (isNextPage && lastStudentDoc) {
           query = query.startAfter(lastStudentDoc);
@@ -1880,7 +1879,26 @@
       updateAdminTopStats();
     }
 
+    /* التعديل 2: تطبيق الوضع المحفوظ عند التحميل */
+    function applySavedTheme() {
+      const savedTheme = localStorage.getItem('masar_theme');
+      if (savedTheme === 'dark') {
+        document.body.classList.add('dark-mode');
+        const themeBtn = document.getElementById('themeBtn');
+        if (themeBtn) themeBtn.innerHTML = `<span class="material-icons-outlined">light_mode</span>`;
+        const menuThemeText = document.getElementById('menuThemeText');
+        if (menuThemeText) menuThemeText.innerText = 'ليلي';
+      } else if (savedTheme === 'light') {
+        document.body.classList.remove('dark-mode');
+        const themeBtn = document.getElementById('themeBtn');
+        if (themeBtn) themeBtn.innerHTML = `<span class="material-icons-outlined">dark_mode</span>`;
+        const menuThemeText = document.getElementById('menuThemeText');
+        if (menuThemeText) menuThemeText.innerText = 'نهاري';
+      }
+    }
+
     window.addEventListener('DOMContentLoaded', () => {
+      applySavedTheme();
       loadCaptains();
       loadStudents();
       listenToAdminBroadcast();
@@ -1912,9 +1930,11 @@
       }
     }
 
+    /* التعديل 2: حفظ الوضع الليلي/النهاري في localStorage */
     function toggleTheme() {
       document.body.classList.toggle('dark-mode');
       const isDark = document.body.classList.contains('dark-mode');
+      localStorage.setItem('masar_theme', isDark ? 'dark' : 'light');
       document.getElementById('themeBtn').innerHTML = `<span class="material-icons-outlined">${isDark ? 'light_mode' : 'dark_mode'}</span>`;
       document.getElementById('menuThemeText').innerText = isDark ? 'ليلي' : 'نهاري';
     }
@@ -2182,18 +2202,21 @@
       alert("تم إرسال وتقديم التقييم للكابتن بنجاح ⭐ شكرًا لمشاركتك!");
     }
 
+    /* التعديل 1: نظام الفلترة الذكي للخطوط حسب نقطة الانطلاق والمحافظة بشكل تقريبي */
     function renderPublicCaptainsView() {
       const container = document.getElementById('publicCaptainsListContainer');
       const loadMoreContainer = document.getElementById('publicCaptainsLoadMoreContainer');
       const countLabel = document.getElementById('captainsCountLabel');
       if (!container) return;
 
+      const searchGov = document.getElementById('capSearchGov') ? document.getElementById('capSearchGov').value : '';
       const searchName = document.getElementById('capSearchName') ? document.getElementById('capSearchName').value : '';
       const searchStart = document.getElementById('capSearchStart') ? document.getElementById('capSearchStart').value : '';
       const searchTarget = document.getElementById('capSearchTarget') ? document.getElementById('capSearchTarget').value : '';
 
       const list = captainsData.filter(c => {
         if (c.status !== 'نشط' && c.status !== 'معتمد') return false;
+        if (searchGov && !isApproximateMatch(c.startLoc, searchGov)) return false;
         if (searchName && !isApproximateMatch(c.name, searchName)) return false;
         if (searchStart && !isApproximateMatch(c.startLoc, searchStart)) return false;
         if (searchTarget && !isApproximateMatch(c.targetLoc, searchTarget)) return false;
@@ -2231,6 +2254,9 @@
           }
         }
 
+        const bookingText = encodeURIComponent(`السلام عليكم، أود حجز خط مع الكابتن: ${c.name}\nنقطة الانطلاق: ${c.startLoc || 'غير محدد'}\nنقطة الوصول: ${c.targetLoc || 'غير محدد'}`);
+        const bookingWhatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${bookingText}`;
+
         html += `
           <div class="admin-item-card">
             <div class="item-card-header">
@@ -2241,7 +2267,7 @@
                   <div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">⭐ ${c.rating || 5.0} / 5.0</div>
                 </div>
               </div>
-              <a href="https://wa.me/${WHATSAPP_NUMBER}" target="_blank" class="whatsapp-badge">
+              <a href="${bookingWhatsappUrl}" target="_blank" class="whatsapp-badge">
                 <span class="material-icons-outlined">chat</span> حجز
               </a>
             </div>
@@ -2345,6 +2371,23 @@
       renderUserSettingsView();
     }
 
+    async function removeCaptainFromUser(studentId, captainId) {
+      const st = studentsData.find(s => s.id === studentId);
+      if (st) {
+        st.captainId = null;
+        await saveStudentDoc(st);
+      }
+      const cap = captainsData.find(c => c.id === captainId);
+      if (cap && cap.students && Array.isArray(cap.students)) {
+        cap.students = cap.students.filter(sItem => {
+          if (typeof sItem === 'object') return sItem.id !== studentId && sItem.phone !== st?.phone;
+          return sItem !== studentId && sItem !== st?.phone;
+        });
+        await saveCaptainDoc(cap);
+      }
+      renderUserSettingsViewResults();
+    }
+
     function renderUserSettingsViewResults() {
       const container = document.getElementById('userSettingsContainer');
       if (!container) return;
@@ -2373,8 +2416,13 @@
       if (linkedCaptain) {
         captainHtml = `
           <div class="admin-item-card" style="border:1px solid var(--primary);">
-            <div style="font-weight:800; font-size:0.95rem; color:var(--primary); margin-bottom:10px; display:flex; align-items:center; gap:6px;">
-              <span class="material-icons-outlined">directions_car</span> الكابتن المرتبط ببطاقتك
+            <div style="font-weight:800; font-size:0.95rem; color:var(--primary); margin-bottom:10px; display:flex; align-items:center; justify-content:space-between;">
+              <span style="display:flex; align-items:center; gap:6px;">
+                <span class="material-icons-outlined">directions_car</span> الكابتن المرتبط ببطاقتك
+              </span>
+              <button onclick="removeCaptainFromUser('${student.id}', '${linkedCaptain.id}')" style="background:var(--badge-red-bg); color:var(--badge-red-text); border:none; padding:4px 8px; border-radius:6px; cursor:pointer; font-size:0.75rem; font-weight:700; display:inline-flex; align-items:center; gap:2px;">
+                <span class="material-icons-outlined" style="font-size:0.85rem;">link_off</span> حذف الكابتن
+              </button>
             </div>
             
             <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
@@ -2504,6 +2552,24 @@
       renderCaptainSettingsView();
     }
 
+    async function removeStudentFromCaptain(captainId, studentId) {
+      const cap = captainsData.find(c => c.id === captainId);
+      if (!cap) return;
+      if (cap.students && Array.isArray(cap.students)) {
+        cap.students = cap.students.filter(st => {
+          if (typeof st === 'object') return st.id !== studentId && st.phone !== studentId;
+          return st !== studentId;
+        });
+      }
+      const st = studentsData.find(s => s.id === studentId);
+      if (st) {
+        st.captainId = null;
+        await saveStudentDoc(st);
+      }
+      await saveCaptainDoc(cap);
+      renderCaptainSettingsResults();
+    }
+
     function renderCaptainSettingsResults() {
       const container = document.getElementById('captainSettingsContainer');
       if (!container) return;
@@ -2541,9 +2607,14 @@
       if (linkedStudentsList.length > 0) {
         studentsHtml = linkedStudentsList.map(st => `
           <div style="background:var(--card-bg); padding:10px; border-radius:10px; border:1px solid var(--border-color); margin-bottom:8px;">
-            <div style="font-weight:800; font-size:0.9rem; display:flex; justify-content:space-between;">
+            <div style="font-weight:800; font-size:0.9rem; display:flex; justify-content:space-between; align-items:center;">
               <span>👤 ${escapeHTML(st.name)}</span>
-              <a href="https://wa.me/${st.phone ? st.phone.replace(/[\s+]/g, '') : ''}" target="_blank" style="color:var(--primary); text-decoration:none; font-size:0.8rem; font-weight:700;">📞 ${escapeHTML(st.phone)}</a>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <a href="https://wa.me/${st.phone ? st.phone.replace(/[\s+]/g, '') : ''}" target="_blank" style="color:var(--primary); text-decoration:none; font-size:0.8rem; font-weight:700;">📞 ${escapeHTML(st.phone)}</a>
+                <button onclick="removeStudentFromCaptain('${captain.id}', '${st.id}')" style="background:var(--badge-red-bg); color:var(--badge-red-text); border:none; padding:4px 8px; border-radius:6px; cursor:pointer; font-size:0.75rem; font-weight:700; display:inline-flex; align-items:center; gap:2px;">
+                  <span class="material-icons-outlined" style="font-size:0.85rem;">person_remove</span> حذف الطالب
+                </button>
+              </div>
             </div>
             <div style="font-size:0.78rem; color:var(--text-muted); margin-top:4px;">
               📍 <strong>الانطلاق:</strong> ${escapeHTML(st.startLoc || 'غير محدد')} | 🎯 <strong>الوصول:</strong> ${escapeHTML(st.targetLoc || 'غير محدد')}
@@ -2637,6 +2708,7 @@
       renderAdminContent();
     }
 
+    /* التعديل 1: البحث التقريبي في لوحة التحكم لمختلف الحقول */
     function renderAdminContent() {
       const container = document.getElementById('adminCardsContainer');
       const loadMoreContainer = document.getElementById('adminLoadMoreContainer');
@@ -2708,7 +2780,6 @@
               <div class="admin-actions-grid">
                 <button class="act-btn-sm btn-blue" onclick="updateCaptainStatus('${c.id}', 'جديد')">جديد</button>
                 
-                <!-- زر التبديل المعتمد المطلوب -->
                 <button class="act-btn-sm ${isCertified ? 'btn-yellow' : 'btn-green'}" onclick="toggleCaptainCertified('${c.id}')">
                   <span class="material-icons-outlined">verified</span> ${isCertified ? 'إلغاء الاعتماد' : 'إعتماد كابتن'}
                 </button>
@@ -2784,7 +2855,6 @@
       }
     }
 
-    // دالة تبديل حالة الاعتماد عند الضغط على زر "معتمد"
     async function toggleCaptainCertified(captainId) {
       const cap = captainsData.find(c => c.id === captainId);
       if (!cap) return;
@@ -2956,37 +3026,87 @@
       openModal('captainMsgModal');
     }
 
+    /* التعديل 2: تحويل ميزات الذكاء الاصطناعي للمشرفين إلى تقارير تحليلات وعدم الربط التلقائي */
     function runAdminAIAssistant() {
       const output = document.getElementById('aiAssistantOutput');
       if (!output) return;
 
-      output.innerText = "جاري مسح ومطابقة الوجهات بين الطلاب الجدد والكباتن...";
+      output.innerText = "جاري تحليل البيانات وإعداد التقارير الذكية للمشرفين...";
 
       setTimeout(() => {
-        let matches = 0;
+        // 1. تقرير المطابقات المقترحة
+        let suggestedMatches = [];
         studentsData.forEach(st => {
-          if (st.status === 'جديد' && !st.captainId) {
+          if ((st.status === 'جديد' || !st.captainId) && st.status !== 'محظور') {
             const matchedCap = captainsData.find(c => c.status !== 'محظور' && Number(c.vacantSeats) > 0 && isApproximateMatch(c.targetLoc, st.targetLoc));
             if (matchedCap) {
-              st.captainId = matchedCap.id;
-              st.status = 'نشط';
-              saveStudentDoc(st);
-              if (!matchedCap.students) matchedCap.students = [];
-              matchedCap.students.push({ id: st.id, name: st.name, phone: st.phone });
-              matchedCap.vacantSeats = Math.max(0, Number(matchedCap.vacantSeats) - 1);
-              saveCaptainDoc(matchedCap);
-              matches++;
+              suggestedMatches.push({
+                studentName: st.name,
+                studentLoc: st.startLoc || 'غير محدد',
+                target: st.targetLoc || 'غير محدد',
+                captainName: matchedCap.name,
+                captainSeats: matchedCap.vacantSeats
+              });
             }
           }
         });
 
-        if (matches > 0) {
-          output.innerText = `✨ قام الذكاء الاصطناعي بمطابقة وربط ${matches} طلاب جدد مع كباتن مناسبين تلقائياً بنجاح!`;
+        // 2. تقرير تحليل العجز حسب المناطق
+        let unservedAreas = {};
+        studentsData.forEach(st => {
+          if (!st.captainId && st.status !== 'محظور') {
+            const area = st.startLoc || 'مناطق أخرى';
+            unservedAreas[area] = (unservedAreas[area] || 0) + 1;
+          }
+        });
+
+        // 3. تقرير السعة التشغيلية وإشغال الخطوط
+        let totalSeatsAvailable = 0;
+        let totalFullLines = 0;
+        let totalActiveCaptains = 0;
+        captainsData.forEach(c => {
+          if (c.status !== 'محظور') {
+            totalActiveCaptains++;
+            totalSeatsAvailable += Number(c.vacantSeats || 0);
+            if (Number(c.vacantSeats) === 0 || c.status === 'مكتمل') totalFullLines++;
+          }
+        });
+
+        // صياغة التقرير الإشرافي العرضي للمشرف
+        let reportHtml = `<div style="display:flex; flex-direction:column; gap:8px;">`;
+        
+        reportHtml += `<div><strong>📊 تقرير السعة والخطوط:</strong> إجمالي الكباتن النشطين (${totalActiveCaptains}) | المقاعد الشاغرة الكلية (${totalSeatsAvailable}) | الخطوط المكتملة (${totalFullLines})</div>`;
+
+        reportHtml += `<div style="margin-top:4px;"><strong>🧩 التوصيات والمطابقات المقترحة (${suggestedMatches.length}):</strong></div>`;
+        if (suggestedMatches.length > 0) {
+          reportHtml += `<ul style="padding-right:16px; font-size:0.8rem; margin-bottom:4px;">`;
+          suggestedMatches.slice(0, 5).forEach(m => {
+            reportHtml += `<li>الطالب: <strong>${escapeHTML(m.studentName)}</strong> (${escapeHTML(m.studentLoc)} ➔ ${escapeHTML(m.target)}) ⬅️ اقترح ربطه بالكابتن: <strong>${escapeHTML(m.captainName)}</strong> (${m.captainSeats} مقاعد)</li>`;
+          });
+          if (suggestedMatches.length > 5) {
+            reportHtml += `<li>...وهناك ${suggestedMatches.length - 5} اقتراحات أخرى.</li>`;
+          }
+          reportHtml += `</ul>`;
         } else {
-          output.innerText = "ℹ️ تمت عملية المسح، لم يتم العثور على تطابقات جديدة في الوجهات حالياً.";
+          reportHtml += `<div style="font-size:0.8rem; color:var(--text-muted);">لا توجد اقتراحات مطابقة جديدة حالياً.</div>`;
         }
-        renderAdminContent();
-      }, 1200);
+
+        reportHtml += `<div style="margin-top:4px;"><strong>⚠️ تقرير المناطق الأكثر طلباً بحاجة لكباتن جدد:</strong></div>`;
+        const topUnserved = Object.entries(unservedAreas).sort((a, b) => b[1] - a[1]).slice(0, 3);
+        if (topUnserved.length > 0) {
+          reportHtml += `<ul style="padding-right:16px; font-size:0.8rem;">`;
+          topUnserved.forEach(([area, count]) => {
+            reportHtml += `<li>منطقة <strong>${escapeHTML(area)}</strong>: بها ${count} طلاب ينتظرون توفير خطوط.</li>`;
+          });
+          reportHtml += `</ul>`;
+        } else {
+          reportHtml += `<div style="font-size:0.8rem; color:var(--text-muted);">جميع المناطق تغطيها خطوط حالياً.</div>`;
+        }
+
+        reportHtml += `</div>`;
+
+        output.innerHTML = reportHtml;
+      }, 1000);
     }
   </script>
 </body>
