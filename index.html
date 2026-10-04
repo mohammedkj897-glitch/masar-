@@ -3,15 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https: data: blob: 'unsafe-inline' 'unsafe-eval'; img-src 'self' https: data: blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://api.mapbox.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https: wss:;">
-<meta name="google-site-verification" content="95zZ8OccnbIGVtc9lCKAIaXREXcEXPFdJ6JcWQ48R8o" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https: data: blob: 'unsafe-inline' 'unsafe-eval'; img-src 'self' https: data: blob: *.tile.openstreetmap.org; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https: wss:;">
+  
   <title>تطبيق مسار - النقل الجماعي المعتمد</title>
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
-  
-  <!-- Mapbox GL JS & CSS -->
-  <link href="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.css" rel="stylesheet">
-  <script src="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.js"></script>
+
+  <!-- Leaflet CSS & JS for OpenStreetMap -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
   <!-- Algolia Search Client SDK -->
   <script src="https://cdn.jsdelivr.net/npm/algoliasearch@4/dist/algoliasearch-lite.umd.js"></script>
@@ -158,8 +158,8 @@
       gap: 4px;
     }
 
-    .badge-verified-check {
-      background: var(--badge-green-bg);
+    .badge-live {
+      background-color: var(--badge-green-bg);
       color: var(--badge-green-text);
       border: 1px solid var(--primary);
       padding: 3px 8px;
@@ -169,6 +169,13 @@
       display: inline-flex;
       align-items: center;
       gap: 4px;
+      animation: livePulse 1.8s infinite;
+    }
+
+    @keyframes livePulse {
+      0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+      70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
     }
 
     .view-section {
@@ -184,7 +191,6 @@
       display: block;
     }
 
-    /* الشريط الإعلاني المتحرك */
     .ticker-container {
       width: 100%;
       background-color: var(--primary-light);
@@ -193,7 +199,7 @@
       border-radius: 12px;
       overflow: hidden;
       margin-bottom: 12px;
-      padding: 8px 0;
+      padding: 8px 12px;
       white-space: nowrap;
       box-sizing: border-box;
       display: flex;
@@ -203,25 +209,9 @@
 
     .ticker-wrapper {
       display: flex;
+      align-items: center;
       width: 100%;
       overflow: hidden;
-    }
-
-    .ticker-text {
-      display: inline-block;
-      white-space: nowrap;
-      animation: tickerAnimation 15s linear infinite;
-      font-weight: 700;
-      font-size: 0.88rem;
-    }
-
-    @keyframes tickerAnimation {
-      0% {
-        transform: translateX(-100%);
-      }
-      100% {
-        transform: translateX(100%);
-      }
     }
 
     .slider-container {
@@ -385,36 +375,6 @@
       color: var(--primary);
       flex-shrink: 0;
       margin-top: 2px;
-    }
-
-    .seats-control-box {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      background-color: var(--input-bg);
-      padding: 8px 12px;
-      border-radius: 12px;
-      border: 1px solid var(--border-color);
-      margin-top: 8px;
-    }
-
-    .btn-seat-qty {
-      width: 32px;
-      height: 32px;
-      border-radius: 8px;
-      border: 1px solid var(--border-color);
-      background-color: var(--card-bg);
-      color: var(--text-color);
-      font-size: 1.1rem;
-      font-weight: 700;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .btn-seat-qty:active {
-      transform: scale(0.92);
     }
 
     .admin-stats-grid {
@@ -657,16 +617,31 @@
     }
 
     .whatsapp-badge {
-      background-color: var(--badge-green-bg);
-      color: var(--badge-green-text);
-      padding: 8px 12px;
-      border-radius: 10px;
+      background-color: var(--primary);
+      color: #ffffff;
+      padding: 8px 16px;
+      border-radius: 20px;
       font-weight: 700;
       text-decoration: none;
       display: inline-flex;
       align-items: center;
       gap: 6px;
       font-size: 0.85rem;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .whatsapp-badge:hover {
+      background-color: var(--primary-hover);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .whatsapp-badge:active {
+      transform: scale(0.95);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
     }
 
     .admin-actions-grid {
@@ -983,7 +958,6 @@
       gap: 6px;
     }
 
-    /* تنسيقات حاوية الخريطة الجديدة */
     .map-picker-container {
       width: 100%;
       height: 180px;
@@ -991,6 +965,16 @@
       border: 1px solid var(--border-color);
       margin-top: 6px;
       overflow: hidden;
+    }
+
+    .leaflet-map-modal-container {
+      width: 100%;
+      height: 320px;
+      border-radius: 14px;
+      overflow: hidden;
+      margin-top: 10px;
+      border: 1px solid var(--border-color);
+      z-index: 10;
     }
 
     @keyframes fadeIn {
@@ -1018,8 +1002,9 @@
   <main id="homeView" class="view-section active">
     <!-- الشريط الإعلاني المتحرك -->
     <div class="ticker-container" id="tickerContainer" style="display: none;">
+      <span class="material-icons-outlined" style="color: var(--primary); margin-left: 8px; flex-shrink: 0;">campaign</span>
       <div class="ticker-wrapper">
-        <div class="ticker-text" id="tickerText"></div>
+        <marquee id="tickerText" direction="right" scrollamount="4" behavior="scroll" style="font-weight: 700; font-size: 0.88rem; color: var(--primary); width: 100%; font-family: 'Tajawal', sans-serif; border: none; outline: none;"></marquee>
       </div>
     </div>
 
@@ -1047,11 +1032,11 @@
     </div>
 
     <div class="cards-container">
-      <div class="card" onclick="openModal('uniModal')">
+      <div class="card" onclick="navigateToView('captainsView')">
         <img src="https://raw.githubusercontent.com/mohammedkj897-glitch/masar-images/main/1788057775708.jpg" alt="تسجيل طلاب الجامعات">
       </div>
 
-      <div class="card" onclick="openModal('schoolModal')">
+      <div class="card" onclick="navigateToView('captainsView')">
         <img src="https://raw.githubusercontent.com/mohammedkj897-glitch/masar-images/main/1788057813181.jpg" alt="تسجيل طلاب المدارس">
       </div>
 
@@ -1066,7 +1051,7 @@
     </div>
   </main>
 
-  <!-- الشاشة 2: الكباتن والخطوط النشطة (التعديل 1: إضافة فلتر المحافظات والفلترة الذكية) -->
+  <!-- الشاشة 2: الكباتن والخطوط النشطة -->
   <main id="captainsView" class="view-section">
     <div style="font-size: 1.15rem; font-weight: 800; margin-bottom: 12px; display:flex; justify-content:space-between; align-items:center;">
       <span style="display:flex; align-items:center; gap:6px;">
@@ -1076,7 +1061,6 @@
     </div>
 
     <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px;">
-      <!-- قائمة اختيار المحافظة لتسهيل العثور على الخط حسب المحافظة ونقطة الانطلاق -->
       <div class="search-box-wrapper" style="margin-bottom: 0;">
         <select class="form-select search-input" id="capSearchGov" onchange="triggerCaptainsSearch()" style="padding-left: 38px;">
           <option value="">جميع المحافظات (تحديد المحافظة)...</option>
@@ -1120,6 +1104,18 @@
     <div id="publicCaptainsLoadMoreContainer"></div>
   </main>
 
+  <!-- الشاشة المضافة: الخريطة -->
+  <main id="mapView" class="view-section">
+    <div style="font-size: 1.15rem; font-weight: 800; margin-bottom: 12px; display:flex; justify-content:space-between; align-items:center;">
+      <span style="display:flex; align-items:center; gap:6px;">
+        <span class="material-icons-outlined" style="color:var(--primary);">map</span> خريطة الخطوط والكباتن
+      </span>
+    </div>
+
+    <!-- خريطة Leaflet التفاعلية لعرض مواقع الكباتن المتاحة -->
+    <div id="captainsMainMap" style="width: 100%; height: 380px; border-radius: 14px; margin-bottom: 14px; border: 1px solid var(--border-color); overflow: hidden; position: relative; z-index: 1;"></div>
+  </main>
+
   <!-- الشاشة 3: القائمة الرئيسية -->
   <main id="menuView" class="view-section">
     <div style="font-size: 1.15rem; font-weight: 800; margin-bottom: 14px; text-align: center; display:flex; align-items:center; justify-content:center; gap:6px;">
@@ -1155,6 +1151,13 @@
         <span id="menuThemeText" style="font-size:0.8rem; color:var(--text-muted);">نهاري</span>
       </button>
 
+      <button class="menu-item-btn" onclick="window.open('https://t.me/mhh122', '_blank')">
+        <span style="display:flex; align-items:center; gap:8px;">
+          <span class="material-icons-outlined">send</span> تنزيل التطبيق عبر التلي كرام للاندرويد و الايفون
+        </span>
+        <span class="material-icons-outlined">open_in_new</span>
+      </button>
+
       <button class="menu-item-btn" onclick="openWhatsAppSupport()">
         <span style="display:flex; align-items:center; gap:8px;">
           <span class="material-icons-outlined" style="color:#25D366;">chat</span> تواصل مع الدعم
@@ -1181,7 +1184,7 @@
         <span class="material-icons-outlined" style="color:var(--primary);">person</span> إعدادات المستخدم والتقييم
       </div>
       <button class="logout-btn" id="userLogoutBtn" style="display:none;" onclick="logoutUserSession()">
-        <span class="material-icons-outlined">logout</span> خروج
+        <span class="material-icons-outlined">logout</span> تسجيل خروج من الحساب
       </button>
     </div>
     <div id="userSettingsContainer"></div>
@@ -1202,21 +1205,27 @@
           <span class="msg-icon-badge" id="captainMsgBadge"></span>
         </div>
         <button class="logout-btn" id="captainLogoutBtn" style="display:none;" onclick="logoutCaptainSession()">
-          <span class="material-icons-outlined">logout</span> خروج
+          <span class="material-icons-outlined">logout</span> تسجيل خروج من الحساب
         </button>
       </div>
     </div>
     <div id="captainSettingsContainer"></div>
   </main>
 
-  <!-- الشاشة 6: لوحة المشرفين (التعديل 2: تحديث واجهة تقارير الذكاء الاصطناعي للمشرفين) -->
+  <!-- الشاشة 6: لوحة المشرفين -->
   <main id="adminView" class="view-section">
     <div class="admin-card-header">
+      <button class="act-btn" onclick="navigateToView('homeView')" title="خروج من لوحة المشرفين" style="background:var(--btn-bg-soft); color:var(--text-color); border:1px solid var(--border-color); padding:8px 12px; display:flex; align-items:center; justify-content:center;">
+        <span class="material-icons-outlined">arrow_forward</span>
+      </button>
       <div class="admin-title-box">
         <h2><span class="material-icons-outlined" style="color:var(--primary);">verified</span> لوحة المشرفين</h2>
         <p>إدارة الطلبات، الكباتن والاشتراكات</p>
       </div>
       <div style="display:flex; gap:6px; align-items:center;">
+        <button class="act-btn" onclick="toggleDirectBookingMode()" id="directBookingToggleBtn" title="نمط الحجز عبر هاتف الكابتن" style="background-color:var(--btn-bg-soft); color:var(--text-color); border:1px solid var(--border-color);">
+          <span class="material-icons-outlined">phone_in_talk</span> <span id="directBookingBtnText">حجز الواتساب</span>
+        </button>
         <button class="act-btn" onclick="openModal('adminTickerModal')" title="تحديث الشريط الإعلاني" style="background-color:var(--primary); color:#fff; border:none;">
           <span class="material-icons-outlined">campaign</span> الإعلان
         </button>
@@ -1255,14 +1264,101 @@
       <div class="ai-assistant-body" id="aiAssistantOutput">
         أهلاً بك! انقر على الزر أدناه ليقوم الذكاء الاصطناعي بتحليل قاعدة البيانات وتوليد تقارير شاملة عن المطابقات المقترحة، العجز في المناطق، ونسب إشغال الخطوط بدون ربط تلقائي.
       </div>
-      <button class="ai-action-btn" onclick="runAdminAIAssistant()">
-        <span class="material-icons-outlined">psychology</span> توليد تقارير التحليل الذكي
-      </button>
+      <div style="margin-top:10px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <select class="form-select" id="aiGovFilter" onchange="runAdminAIAssistant()" style="flex:1; min-width:180px; padding:8px 12px; font-size:0.85rem;">
+          <option value="">جميع المحافظات...</option>
+          <option value="بغداد">بغداد</option>
+          <option value="الأنبار">الأنبار</option>
+          <option value="أربيل">أربيل</option>
+          <option value="بابل">بابل</option>
+          <option value="البصرة">البصرة</option>
+          <option value="دهوك">دهوك</option>
+          <option value="الديوانية">الديوانية</option>
+          <option value="ديالى">ديالى</option>
+          <option value="ذي قار">ذي قار</option>
+          <option value="السليمانية">السليمانية</option>
+          <option value="صلاح الدين">صلاح الدين</option>
+          <option value="كركوك">كركوك</option>
+          <option value="كربلاء">كربلاء</option>
+          <option value="ميسان">ميسان</option>
+          <option value="المثنى">المثنى</option>
+          <option value="النجف">النجف</option>
+          <option value="نينوى">نينوى</option>
+          <option value="واسط">واسط</option>
+        </select>
+        <button class="ai-action-btn" onclick="runAdminAIAssistant()" style="margin-top:0;">
+          <span class="material-icons-outlined">psychology</span> توليد تقارير التحليل الذكي
+        </button>
+      </div>
+    </div>
+
+    <!-- قائمة ثابته جديدة: عرض تقارير التحليل الذكي -->
+    <div id="aiReportFixedPanel" class="admin-item-card" style="display: none; border: 1px solid var(--primary);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border-color);">
+        <div style="font-size: 1.05rem; font-weight: 800; display: flex; align-items: center; gap: 6px; color: var(--primary);">
+          <span class="material-icons-outlined">auto_awesome</span> قائمة تقارير التحليل الذكي
+        </div>
+        <button class="act-btn" onclick="closeAIReportFixedPanel()" title="خروج من القائمة">
+          <span class="material-icons-outlined">arrow_forward</span> الخروج من القائمة
+        </button>
+      </div>
+      <div id="aiReportFixedPanelContent" style="font-size: 0.85rem; line-height: 1.6;"></div>
+    </div>
+
+    <!-- قائمة ثابته جديدة: إضافة طالب إلى الخط -->
+    <div id="addStudentFixedPanel" class="admin-item-card" style="display: none; border: 1px solid var(--primary);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border-color);">
+        <div style="font-size: 1.05rem; font-weight: 800; display: flex; align-items: center; gap: 6px;">
+          <span class="material-icons-outlined" style="color:var(--primary);">person_add</span> إضافة طالب إلى الخط
+        </div>
+        <button class="act-btn" onclick="closeAddStudentFixedPanel()" title="إغلاق القائمة">
+          <span class="material-icons-outlined">close</span> إغلاق القائمة
+        </button>
+      </div>
+      <form onsubmit="handleConfirmAddStudentToCaptain(event)">
+        <input type="hidden" id="targetCaptainIdForAdd">
+        <div class="form-group">
+          <label>رقم هاتف الطالب المسجل 📱 *</label>
+          <input type="tel" class="form-input" id="addStudentPhoneInput" placeholder="أدخل رقم الهاتف للبحث التلقائي..." required oninput="lookupStudentByPhone(this.value)">
+        </div>
+        <div class="form-group">
+          <label>اسم الطالب 👤 *</label>
+          <input type="text" class="form-input" id="addStudentNameInput" placeholder="سيظهر اسم الطالب تلقائياً هنا..." required>
+          <small id="studentLookupStatus" style="display:block; margin-top:6px; font-weight:bold; font-size:0.82rem;"></small>
+        </div>
+        <button type="submit" class="submit-btn"><span class="material-icons-outlined">add_circle</span> تأكيد إضافة الطالب للكابتن</button>
+      </form>
+    </div>
+
+    <!-- قائمة ثابته جديدة: إضافة / تحديث صورة الكابتن -->
+    <div id="adminCaptainImageFixedPanel" class="admin-item-card" style="display: none; border: 1px solid var(--primary);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border-color);">
+        <div style="font-size: 1.05rem; font-weight: 800; display: flex; align-items: center; gap: 6px;">
+          <span class="material-icons-outlined" style="color:var(--primary);">image</span> إضافة / تحديث صورة الكابتن
+        </div>
+        <button class="act-btn" onclick="closeCaptainImageFixedPanel()" title="إغلاق القائمة">
+          <span class="material-icons-outlined">close</span> إغلاق القائمة
+        </button>
+      </div>
+      <form onsubmit="handleAdminUpdateCaptainImage(event)">
+        <input type="hidden" id="adminTargetCaptainIdForImg">
+        <div class="form-group">
+          <label>رابط الصورة الجديد (URL) *</label>
+          <input type="url" class="form-input" id="adminCaptainImgInput" placeholder="https://..." required>
+        </div>
+        <button type="submit" class="submit-btn"><span class="material-icons-outlined">save</span> حفظ الصورة</button>
+      </form>
     </div>
 
     <div class="admin-tabs-nav">
       <button class="admin-tab-btn active" id="tabCaptains" onclick="switchAdminTab('captains')">
         <span class="material-icons-outlined">directions_car</span> الكباتن
+      </button>
+      <button class="admin-tab-btn" id="tabOnline" onclick="switchAdminTab('online')">
+        <span class="material-icons-outlined">sensors</span> المتواجدون حالياً
+      </button>
+      <button class="admin-tab-btn" id="tabCaptainChanges" onclick="switchAdminTab('captainChanges')">
+        <span class="material-icons-outlined">published_with_changes</span> تغييرات الكباتن
       </button>
       <button class="admin-tab-btn" id="tabUni" onclick="switchAdminTab('uni')">
         <span class="material-icons-outlined">school</span> الجامعة
@@ -1292,9 +1388,207 @@
     <div id="adminLoadMoreContainer"></div>
   </main>
 
+  <!-- قائمة ثابتة: عرض الخريطة التفاعلية وتتبع الحافلة -->
+  <div id="liveTrackingFixedPanel" class="admin-item-card" style="display: none; border: 1px solid var(--primary); width: 100%; max-width: 520px; margin: 16px auto;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border-color);">
+      <div style="font-size: 1.05rem; font-weight: 800; display: flex; align-items: center; gap: 6px; color: var(--primary);">
+        <span class="material-icons-outlined">directions_bus</span> تتبع الحافلة المباشر 🚌
+      </div>
+      <button class="act-btn" onclick="closeLiveTrackingModal()" title="إغلاق الخريطة">
+        <span class="material-icons-outlined">close</span> إغلاق الخريطة
+      </button>
+    </div>
+    
+    <div id="trackingInfoBox" style="background:var(--input-bg); padding:10px; border-radius:12px; border:1px solid var(--border-color); font-size:0.82rem; display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:10px;">
+      <div><strong>الكابتن:</strong> <span id="trackCapName">-</span></div>
+      <div><strong>المسافة للطالب:</strong> <span id="trackDistance">-</span></div>
+      <div><strong>الوقت التقديري (ETA):</strong> <span id="trackETA">-</span></div>
+      <div><strong>آخر تحديث:</strong> <span id="trackLastUpdate">-</span></div>
+    </div>
+
+    <div id="leafletMapContainer" class="leaflet-map-modal-container"></div>
+  </div>
+
   <!-- النوافذ المنبثقة -->
 
-  <!-- نافذة الشريط الإعلاني -->
+  <!-- نافذة البدء عند فتح التطبيق مباشرة -->
+  <div class="modal-overlay" id="initialStartModal" style="display: flex;">
+    <div class="modal-content" style="max-width: 480px;">
+      
+      <!-- شاشة الأيقونات الثلاث الأولى -->
+      <div id="initialRoleSelection">
+        <div class="modal-title" style="margin-bottom: 18px;">
+          <span class="material-icons-outlined" style="color:var(--primary); font-size:1.8rem;">directions_bus</span>
+          <span>مرحباً بك في تطبيق مسار</span>
+        </div>
+        <p style="text-align: center; font-size: 0.88rem; color: var(--text-muted); margin-bottom: 20px; font-weight: 700;">
+          اختر نوع حسابك للبدء بالتسجيل:
+        </p>
+        
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 10px;">
+          <div onclick="showInitialForm('uni')" style="background: var(--input-bg); border: 2px solid var(--border-color); border-radius: 16px; padding: 16px 8px; text-align: center; cursor: pointer; transition: all 0.2s ease;">
+            <span class="material-icons-outlined" style="font-size: 2.5rem; color: var(--primary); margin-bottom: 8px;">school</span>
+            <div style="font-size: 0.82rem; font-weight: 800; color: var(--text-color);">طالب جامعة</div>
+          </div>
+
+          <div onclick="showInitialForm('school')" style="background: var(--input-bg); border: 2px solid var(--border-color); border-radius: 16px; padding: 16px 8px; text-align: center; cursor: pointer; transition: all 0.2s ease;">
+            <span class="material-icons-outlined" style="font-size: 2.5rem; color: var(--primary); margin-bottom: 8px;">location_city</span>
+            <div style="font-size: 0.82rem; font-weight: 800; color: var(--text-color);">طالب مدرسة</div>
+          </div>
+
+          <div onclick="showInitialForm('captain')" style="background: var(--input-bg); border: 2px solid var(--border-color); border-radius: 16px; padding: 16px 8px; text-align: center; cursor: pointer; transition: all 0.2s ease;">
+            <span class="material-icons-outlined" style="font-size: 2.5rem; color: var(--primary); margin-bottom: 8px;">directions_car</span>
+            <div style="font-size: 0.82rem; font-weight: 800; color: var(--text-color);">كابتن</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- نموذج تسجيل طالب جامعة عند التمهيد -->
+      <div id="initialUniFormContainer" style="display: none;">
+        <button type="button" class="act-btn" onclick="backToInitialRoleSelection()" style="margin-bottom: 12px;">
+          <span class="material-icons-outlined">arrow_forward</span> رجوع للخيارات
+        </button>
+        <div class="modal-title"><span class="material-icons-outlined">school</span> تسجيل: طالب جامعة</div>
+        <form onsubmit="handleInitialStudentSubmit(event, 'جامعة')">
+          <div class="form-group">
+            <label>الاسم الكامل *</label>
+            <input type="text" class="form-input" placeholder="أدخل اسمك الكريم" required id="initUniName">
+          </div>
+          <div class="form-group">
+            <label>رقم الواتساب 📱 *</label>
+            <input type="tel" class="form-input" placeholder="مثال: 07700000000" required id="initUniPhone">
+          </div>
+          <div class="form-group">
+            <label>الرمز السري 🔒 *</label>
+            <div style="position: relative; display: flex; align-items: center;">
+              <input type="password" class="form-input" placeholder="أدخل الرمز السري" required id="initUniPassCode" oninput="checkWeakPassword(this.value, 'initUniPassWarning')" style="padding-left: 40px;">
+              <span class="material-icons-outlined" onclick="togglePasswordVisibility('initUniPassCode', this)" style="position: absolute; left: 10px; cursor: pointer; color: var(--text-muted); user-select: none;">visibility</span>
+            </div>
+            <small id="initUniPassWarning" style="color:#ef4444; font-weight:bold; display:none; margin-top:4px;">هذا رمز ضعيف اكتب رمز اقوى</small>
+          </div>
+          <div class="form-group">
+            <label>نقطة الانطلاق (المحافظة والمدينة) *</label>
+            <div class="location-row">
+              <input type="text" class="form-input" placeholder="المحافظة" required id="initUniGov">
+              <input type="text" class="form-input" placeholder="المدينة / المنطقة" required id="initUniCity">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>اسم الجامعة (الوجهة) *</label>
+            <input type="text" class="form-input" placeholder="أدخل اسم الجامعة..." required id="initUniTarget">
+          </div>
+          <div class="form-group">
+            <label>نوع الدوام</label>
+            <select class="form-select" id="initUniShift">
+              <option value="صباحي">صباحي</option>
+              <option value="مسائي">مسائي</option>
+            </select>
+          </div>
+          <button type="submit" class="submit-btn"><span class="material-icons-outlined">chat</span> إرسال الطلب والتسجيل</button>
+        </form>
+      </div>
+
+      <!-- نموذج تسجيل طالب مدرسة عند التمهيد -->
+      <div id="initialSchoolFormContainer" style="display: none;">
+        <button type="button" class="act-btn" onclick="backToInitialRoleSelection()" style="margin-bottom: 12px;">
+          <span class="material-icons-outlined">arrow_forward</span> رجوع للخيارات
+        </button>
+        <div class="modal-title"><span class="material-icons-outlined">location_city</span> تسجيل: طالب مدرسة</div>
+        <form onsubmit="handleInitialStudentSubmit(event, 'مدرسة')">
+          <div class="form-group">
+            <label>الاسم الكامل *</label>
+            <input type="text" class="form-input" placeholder="أدخل اسمك الكريم" required id="initSchName">
+          </div>
+          <div class="form-group">
+            <label>رقم الواتساب 📱 *</label>
+            <input type="tel" class="form-input" placeholder="مثال: 07700000000" required id="initSchPhone">
+          </div>
+          <div class="form-group">
+            <label>الرمز السري 🔒 *</label>
+            <div style="position: relative; display: flex; align-items: center;">
+              <input type="password" class="form-input" placeholder="أدخل الرمز السري" required id="initSchPassCode" oninput="checkWeakPassword(this.value, 'initSchPassWarning')" style="padding-left: 40px;">
+              <span class="material-icons-outlined" onclick="togglePasswordVisibility('initSchPassCode', this)" style="position: absolute; left: 10px; cursor: pointer; color: var(--text-muted); user-select: none;">visibility</span>
+            </div>
+            <small id="initSchPassWarning" style="color:#ef4444; font-weight:bold; display:none; margin-top:4px;">هذا رمز ضعيف اكتب رمز اقوى</small>
+          </div>
+          <div class="form-group">
+            <label>نقطة الانطلاق (المحافظة والمدينة) *</label>
+            <div class="location-row">
+              <input type="text" class="form-input" placeholder="المحافظة" required id="initSchGov">
+              <input type="text" class="form-input" placeholder="المدينة / المنطقة" required id="initSchCity">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>اسم المدرسة (الوجهة) *</label>
+            <input type="text" class="form-input" placeholder="أدخل اسم المدرسة بوضوح..." required id="initSchTarget">
+          </div>
+          <div class="form-group">
+            <label>نوع الدوام</label>
+            <select class="form-select" id="initSchShift">
+              <option value="صباحي">صباحي</option>
+              <option value="مسائي">مسائي</option>
+            </select>
+          </div>
+          <button type="submit" class="submit-btn"><span class="material-icons-outlined">chat</span> إرسال الطلب والتسجيل</button>
+        </form>
+      </div>
+
+      <!-- نموذج تسجيل كابتن عند التمهيد -->
+      <div id="initialCaptainFormContainer" style="display: none;">
+        <button type="button" class="act-btn" onclick="backToInitialRoleSelection()" style="margin-bottom: 12px;">
+          <span class="material-icons-outlined">arrow_forward</span> رجوع للخيارات
+        </button>
+        <div class="modal-title"><span class="material-icons-outlined">directions_car</span> تسجيل: كابتن</div>
+        <form onsubmit="handleInitialCaptainSubmit(event)">
+          <div class="form-group">
+            <label>الاسم الكامل *</label>
+            <input type="text" class="form-input" placeholder="أدخل اسمك الكريم" required id="initCapName">
+          </div>
+          <div class="form-group">
+            <label>رقم الواتساب 📱 *</label>
+            <input type="tel" class="form-input" placeholder="مثال: 07700000000" required id="initCapPhone">
+          </div>
+          <div class="form-group">
+            <label>الرمز السري 🔒 *</label>
+            <div style="position: relative; display: flex; align-items: center;">
+              <input type="password" class="form-input" placeholder="أدخل الرمز السري" required id="initCapPassCode" oninput="checkWeakPassword(this.value, 'initCapPassWarning')" style="padding-left: 40px;">
+              <span class="material-icons-outlined" onclick="togglePasswordVisibility('initCapPassCode', this)" style="position: absolute; left: 10px; cursor: pointer; color: var(--text-muted); user-select: none;">visibility</span>
+            </div>
+            <small id="initCapPassWarning" style="color:#ef4444; font-weight:bold; display:none; margin-top:4px;">هذا رمز ضعيف اكتب رمز اقوى</small>
+          </div>
+          <div class="form-group">
+            <label>نقطة الانطلاق (المحافظة والمدينة) *</label>
+            <div class="location-row">
+              <input type="text" class="form-input" placeholder="المحافظة" required id="initCapGov">
+              <input type="text" class="form-input" placeholder="المدينة / القضاء" required id="initCapCity">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>السعر المحدد *</label>
+            <input type="text" class="form-input" placeholder="مثال: 150,000" required id="initCapPrice" oninput="formatPriceInput(this)">
+          </div>
+          <div class="form-group">
+            <label>نقطة الوصول / الوجهة *</label>
+            <input type="text" class="form-input" placeholder="مثال: جامعة الاسراء / مدارس الفلوجة" required id="initCapTarget">
+          </div>
+          <div class="form-group">
+            <label>نوع الدوام (الدوام) *</label>
+            <select class="form-select" id="initCapShift">
+              <option value="صباحي">صباحي</option>
+              <option value="مسائي">مسائي</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>تفاصيل المركبة (النوع، اللون، الرقم) *</label>
+            <input type="text" class="form-input" placeholder="مثال: ستاركس أبيض / بغداد 12345" required id="initCapCar">
+          </div>
+          <button type="submit" class="submit-btn"><span class="material-icons-outlined">chat</span> إرسال الطلب والتسجيل</button>
+        </form>
+      </div>
+
+    </div>
+  </div>
+
   <div class="modal-overlay" id="adminTickerModal" onclick="closeModalOnOverlay(event, 'adminTickerModal')">
     <div class="modal-content">
       <button class="close-btn" onclick="closeModal('adminTickerModal')"><span class="material-icons-outlined">close</span></button>
@@ -1356,6 +1650,14 @@
           <input type="tel" class="form-input" placeholder="مثال: 07700000000" required id="uniPhone">
         </div>
         <div class="form-group">
+          <label>الرمز السري 🔒 *</label>
+          <div style="position: relative; display: flex; align-items: center;">
+            <input type="password" class="form-input" placeholder="أدخل الرمز السري" required id="uniPassCode" oninput="checkWeakPassword(this.value, 'uniPassWarning')" style="padding-left: 40px;">
+            <span class="material-icons-outlined" onclick="togglePasswordVisibility('uniPassCode', this)" style="position: absolute; left: 10px; cursor: pointer; color: var(--text-muted); user-select: none;">visibility</span>
+          </div>
+          <small id="uniPassWarning" style="color:#ef4444; font-weight:bold; display:none; margin-top:4px;">هذا رمز ضعيف اكتب رمز اقوى</small>
+        </div>
+        <div class="form-group">
           <label>نقطة الانطلاق (المحافظة والمدينة) *</label>
           <div class="location-row">
             <input type="text" class="form-input" placeholder="المحافظة" required id="uniGov">
@@ -1390,6 +1692,14 @@
         <div class="form-group">
           <label>رقم الواتساب 📱 *</label>
           <input type="tel" class="form-input" placeholder="مثال: 07700000000" required id="schPhone">
+        </div>
+        <div class="form-group">
+          <label>الرمز السري 🔒 *</label>
+          <div style="position: relative; display: flex; align-items: center;">
+            <input type="password" class="form-input" placeholder="أدخل الرمز السري" required id="schPassCode" oninput="checkWeakPassword(this.value, 'schPassWarning')" style="padding-left: 40px;">
+            <span class="material-icons-outlined" onclick="togglePasswordVisibility('schPassCode', this)" style="position: absolute; left: 10px; cursor: pointer; color: var(--text-muted); user-select: none;">visibility</span>
+          </div>
+          <small id="schPassWarning" style="color:#ef4444; font-weight:bold; display:none; margin-top:4px;">هذا رمز ضعيف اكتب رمز اقوى</small>
         </div>
         <div class="form-group">
           <label>نقطة الانطلاق (المحافظة والمدينة) *</label>
@@ -1428,6 +1738,14 @@
           <input type="tel" class="form-input" placeholder="مثال: 07700000000" required id="capPhone">
         </div>
         <div class="form-group">
+          <label>الرمز السري 🔒 *</label>
+          <div style="position: relative; display: flex; align-items: center;">
+            <input type="password" class="form-input" placeholder="أدخل الرمز السري" required id="capPassCode" oninput="checkWeakPassword(this.value, 'capPassWarning')" style="padding-left: 40px;">
+            <span class="material-icons-outlined" onclick="togglePasswordVisibility('capPassCode', this)" style="position: absolute; left: 10px; cursor: pointer; color: var(--text-muted); user-select: none;">visibility</span>
+          </div>
+          <small id="capPassWarning" style="color:#ef4444; font-weight:bold; display:none; margin-top:4px;">هذا رمز ضعيف اكتب رمز اقوى</small>
+        </div>
+        <div class="form-group">
           <label>نقطة الانطلاق (المحافظة والمدينة) *</label>
           <div class="location-row">
             <input type="text" class="form-input" placeholder="المحافظة" required id="capGov">
@@ -1435,16 +1753,27 @@
           </div>
         </div>
         <div class="form-group">
-          <label>حدد موقع الانطلاق والوصول على الخريطة (اختياري) 🗺️</label>
-          <div id="captainMapPicker" class="map-picker-container"></div>
-          <input type="hidden" id="capStartLat">
-          <input type="hidden" id="capStartLng">
-          <input type="hidden" id="capTargetLat">
-          <input type="hidden" id="capTargetLng">
+          <label>السعر المحدد *</label>
+          <input type="text" class="form-input" placeholder="مثال: 150,000" required id="capPrice" oninput="formatPriceInput(this)">
         </div>
         <div class="form-group">
           <label>نقطة الوصول / الوجهة *</label>
           <input type="text" class="form-input" placeholder="مثال: جامعة الاسراء / مدارس الفلوجة" required id="capTarget">
+        </div>
+        <div class="form-group">
+          <label>نوع الدوام (الدوام) *</label>
+          <select class="form-select" id="capShift">
+            <option value="صباحي">صباحي</option>
+            <option value="مسائي">مسائي</option>
+          </select>
+        </div>
+        <div class="form-group" style="display: none;">
+          <label>معاينة المسار على الخريطة (خرائط جوجل) 🗺</label>
+          <iframe id="captainMapIframe" class="map-picker-container" style="width:100%; height:180px; border:0; border-radius:12px;" src="https://maps.google.com/maps?q=Iraq&t=&z=9&ie=UTF8&iwloc=&output=embed"></iframe>
+          <input type="hidden" id="capStartLat">
+          <input type="hidden" id="capStartLng">
+          <input type="hidden" id="capTargetLat">
+          <input type="hidden" id="capTargetLng">
         </div>
         <div class="form-group">
           <label>تفاصيل المركبة (النوع، اللون، الرقم) *</label>
@@ -1455,42 +1784,6 @@
     </div>
   </div>
 
-  <div class="modal-overlay" id="addStudentToCaptainModal" onclick="closeModalOnOverlay(event, 'addStudentToCaptainModal')">
-    <div class="modal-content">
-      <button class="close-btn" onclick="closeModal('addStudentToCaptainModal')"><span class="material-icons-outlined">close</span></button>
-      <div class="modal-title"><span class="material-icons-outlined">person_add</span> إضافة طالب إلى الخط</div>
-      <form onsubmit="handleConfirmAddStudentToCaptain(event)">
-        <input type="hidden" id="targetCaptainIdForAdd">
-        <div class="form-group">
-          <label>رقم هاتف الطالب المسجل 📱 *</label>
-          <input type="tel" class="form-input" id="addStudentPhoneInput" placeholder="أدخل رقم الهاتف للبحث التلقائي..." required oninput="lookupStudentByPhone(this.value)">
-        </div>
-        <div class="form-group">
-          <label>اسم الطالب 👤 *</label>
-          <input type="text" class="form-input" id="addStudentNameInput" placeholder="سيظهر اسم الطالب تلقائياً هنا..." required>
-          <small id="studentLookupStatus" style="display:block; margin-top:6px; font-weight:bold; font-size:0.82rem;"></small>
-        </div>
-        <button type="submit" class="submit-btn"><span class="material-icons-outlined">add_circle</span> تأكيد إضافة الطالب للكابتن</button>
-      </form>
-    </div>
-  </div>
-
-  <div class="modal-overlay" id="adminCaptainImageModal" onclick="closeModalOnOverlay(event, 'adminCaptainImageModal')">
-    <div class="modal-content">
-      <button class="close-btn" onclick="closeModal('adminCaptainImageModal')"><span class="material-icons-outlined">close</span></button>
-      <div class="modal-title"><span class="material-icons-outlined">image</span> إضافة / تحديث صورة الكابتن</div>
-      <form onsubmit="handleAdminUpdateCaptainImage(event)">
-        <input type="hidden" id="adminTargetCaptainIdForImg">
-        <div class="form-group">
-          <label>رابط الصورة الجديد (URL) *</label>
-          <input type="url" class="form-input" id="adminCaptainImgInput" placeholder="https://..." required>
-        </div>
-        <button type="submit" class="submit-btn"><span class="material-icons-outlined">save</span> حفظ الصورة</button>
-      </form>
-    </div>
-  </div>
-
-  <!-- نافذة إرسال رسالة لجميع الكباتن من المشرف -->
   <div class="modal-overlay" id="adminBroadcastModal" onclick="closeModalOnOverlay(event, 'adminBroadcastModal')">
     <div class="modal-content">
       <button class="close-btn" onclick="closeModal('adminBroadcastModal')"><span class="material-icons-outlined">close</span></button>
@@ -1505,7 +1798,6 @@
     </div>
   </div>
 
-  <!-- نافذة عرض رسائل المشرف للكابتن -->
   <div class="modal-overlay" id="captainMsgModal" onclick="closeModalOnOverlay(event, 'captainMsgModal')">
     <div class="modal-content">
       <button class="close-btn" onclick="closeModal('captainMsgModal')"><span class="material-icons-outlined">close</span></button>
@@ -1526,6 +1818,10 @@
     <button class="nav-item" id="navCaptains" onclick="navigateToView('captainsView')">
       <span class="material-icons-outlined">directions_car</span>
       <span>خطوط</span>
+    </button>
+    <button class="nav-item" id="navMap" onclick="navigateToView('mapView')">
+      <span class="material-icons-outlined">map</span>
+      <span>الخريطة</span>
     </button>
     <button class="nav-item" id="navMenu" onclick="navigateToView('menuView')">
       <span class="material-icons-outlined">widgets</span>
@@ -1550,7 +1846,6 @@
     const db = firebase.firestore();
     const auth = firebase.auth();
 
-    // تهيئة Firebase Cloud Messaging للإشعارات الفورية
     let messaging = null;
     try {
       if (firebase.messaging.isSupported()) {
@@ -1565,9 +1860,6 @@
       console.warn("FCM messaging error:", e);
     }
 
-    // تهيئة Mapbox API
-    mapboxgl.accessToken = 'pk.eyJ1IjoibWFzYXItYXBwIiwiYSI6ImNsdnQ3ZXpsYzAxcDYya3F2Z2R2eWVydDQifQ.sample';
-
     db.enablePersistence({ synchronizeTabs: true }).catch((err) => {
       if (err.code === 'failed-precondition') console.warn("التخزين المؤقت متعذر بسبب عدة تبويبات.");
     });
@@ -1576,7 +1868,10 @@
     const DEFAULT_CAPTAIN_IMG = "https://raw.githubusercontent.com/mohammedkj897-glitch/masar-images/main/1788057831817.jpg";
     const PAGE_LIMIT = 20;
 
+    const WEAK_PASSWORDS = ["1234", "123456", "12345678", "0000", "1111", "12345", "123123", "password"];
+
     let captainsData = [];
+    let captainChangesData = [];
     let studentsData = [];
     let lastCaptainDoc = null;
     let lastStudentDoc = null;
@@ -1592,16 +1887,368 @@
 
     let searchDebounceTimer = null;
 
+    let isDirectPhoneBookingEnabled = localStorage.getItem('masar_direct_booking') === 'true';
+
     let currentUserSettingsPhone = localStorage.getItem('masar_user_phone') || '';
-    let currentUserSettingsSerial = localStorage.getItem('masar_user_serial') || '';
+    let currentUserSettingsPassCode = localStorage.getItem('masar_user_passcode') || '';
     let currentCaptainLoginPhone = localStorage.getItem('masar_captain_phone') || '';
-    let currentCaptainLoginSerial = localStorage.getItem('masar_captain_serial') || '';
+    let currentCaptainLoginPassCode = localStorage.getItem('masar_captain_passcode') || '';
     
+    let userLoginFailedAttempts = 0;
+    let captainLoginFailedAttempts = 0;
+
     let latestAdminBroadcastMessage = localStorage.getItem('masar_admin_msg') || '';
     let latestAdminBroadcastTime = localStorage.getItem('masar_admin_msg_time') || '';
     let readAdminBroadcastTime = localStorage.getItem('masar_admin_msg_read') || '';
 
-    // حساب المسافة والوقت التلقائي للمسار (Haversine & Speed estimation)
+    let captainWatchId = null;
+    let trackingUnsubscribe = null;
+    let leafletMap = null;
+    let busMarker = null;
+    let studentMarker = null;
+    let routePolyline = null;
+
+    let captainsOverviewMap = null;
+    let captainsOverviewMarkers = [];
+
+    function showInitialForm(role) {
+      document.getElementById('initialRoleSelection').style.display = 'none';
+      document.getElementById('initialUniFormContainer').style.display = 'none';
+      document.getElementById('initialSchoolFormContainer').style.display = 'none';
+      document.getElementById('initialCaptainFormContainer').style.display = 'none';
+
+      if (role === 'uni') {
+        document.getElementById('initialUniFormContainer').style.display = 'block';
+      } else if (role === 'school') {
+        document.getElementById('initialSchoolFormContainer').style.display = 'block';
+      } else if (role === 'captain') {
+        document.getElementById('initialCaptainFormContainer').style.display = 'block';
+      }
+    }
+
+    function backToInitialRoleSelection() {
+      document.getElementById('initialUniFormContainer').style.display = 'none';
+      document.getElementById('initialSchoolFormContainer').style.display = 'none';
+      document.getElementById('initialCaptainFormContainer').style.display = 'none';
+      document.getElementById('initialRoleSelection').style.display = 'block';
+    }
+
+    function closeInitialStartModal() {
+      const modal = document.getElementById('initialStartModal');
+      if (modal) modal.style.display = 'none';
+    }
+
+    async function handleInitialStudentSubmit(e, type) {
+      e.preventDefault();
+      const isUni = type === 'جامعة';
+      const name = sanitizeInput(document.getElementById(isUni ? 'initUniName' : 'initSchName').value);
+      const phone = sanitizeInput(document.getElementById(isUni ? 'initUniPhone' : 'initSchPhone').value);
+      const passCode = sanitizeInput(document.getElementById(isUni ? 'initUniPassCode' : 'initSchPassCode').value);
+      const gov = sanitizeInput(document.getElementById(isUni ? 'initUniGov' : 'initSchGov').value);
+      const city = sanitizeInput(document.getElementById(isUni ? 'initUniCity' : 'initSchCity').value);
+      const target = sanitizeInput(document.getElementById(isUni ? 'initUniTarget' : 'initSchTarget').value);
+      const shift = document.getElementById(isUni ? 'initUniShift' : 'initSchShift').value;
+
+      if (!validateInputText(name) || !validateInputText(target) || !validateInputText(passCode)) {
+        alert("يرجى إدخال أسماء وبيانات والرمز السري بشكل صحيح ❌");
+        return;
+      }
+
+      if (!validatePhone(phone)) {
+        alert("يرجى إدخال رقم هاتف عراقي صحيح (مثال: 07700000000) ❌");
+        return;
+      }
+
+      if (isPasswordWeak(passCode)) {
+        alert("اكتب رمز اقوى");
+        return;
+      }
+
+      const serialNo = "MSR-S" + Math.floor(1000 + Math.random() * 9000);
+
+      const newSt = {
+        id: "st_" + Date.now(),
+        type: type,
+        name: name,
+        phone: phone,
+        passCode: passCode,
+        serialNo: serialNo,
+        isVerified: true,
+        startLoc: `${gov} - ${city}`,
+        targetLoc: target,
+        shift: shift,
+        status: "جديد",
+        createdAt: Date.now()
+      };
+
+      await saveStudentDoc(newSt);
+
+      currentUserSettingsPhone = phone;
+      currentUserSettingsPassCode = passCode;
+      localStorage.setItem('masar_user_phone', phone);
+      localStorage.setItem('masar_user_passcode', passCode);
+
+      trackUserPresence();
+
+      let text = `*طلب خط ${type} - تطبيق مسار*%0Aالاسم: ${encodeURIComponent(name)}%0Aالواتساب: ${encodeURIComponent(phone)}%0Aالرمز السري: ${encodeURIComponent(passCode)}%0Aالرقم التسلسلي: ${encodeURIComponent(serialNo)}%0Aنقطة الانطلاق: ${encodeURIComponent(gov + ' - ' + city)}%0Aالوجهة: ${encodeURIComponent(target)}%0Aالدوام: ${encodeURIComponent(shift)}`;
+
+      window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${text}`, '_blank');
+      e.target.reset();
+      closeInitialStartModal();
+      alert(`تم تسجيل طلبك بنجاح ✅\nالرقم التسلسلي الخاص بك هو: ${serialNo}`);
+
+      navigateToView('userSettingsView');
+    }
+
+    async function handleInitialCaptainSubmit(e) {
+      e.preventDefault();
+      const name = sanitizeInput(document.getElementById('initCapName').value);
+      const phone = sanitizeInput(document.getElementById('initCapPhone').value);
+      const passCode = sanitizeInput(document.getElementById('initCapPassCode').value);
+      const gov = sanitizeInput(document.getElementById('initCapGov').value);
+      const city = sanitizeInput(document.getElementById('initCapCity').value);
+      const price = sanitizeInput(document.getElementById('initCapPrice').value);
+      const target = sanitizeInput(document.getElementById('initCapTarget').value);
+      const shift = document.getElementById('initCapShift') ? document.getElementById('initCapShift').value : 'صباحي';
+      const car = sanitizeInput(document.getElementById('initCapCar').value);
+
+      if (!validateInputText(name) || !validateInputText(target) || !validateInputText(car) || !validateInputText(passCode) || !validateInputText(price)) {
+        alert("يرجى ملء جميع الحقول المطلوب والرمز السري بشكل صحيح ❌");
+        return;
+      }
+
+      if (!validatePhone(phone)) {
+        alert("يرجى إدخال رقم هاتف عراقي صحيح (مثال: 07700000000) ❌");
+        return;
+      }
+
+      if (isPasswordWeak(passCode)) {
+        alert("اكتب رمز اقوى");
+        return;
+      }
+
+      const serialNo = "MSR-C" + Math.floor(1000 + Math.random() * 9000);
+
+      const newCap = {
+        id: "cap_" + Date.now(),
+        name: name,
+        phone: phone,
+        passCode: passCode,
+        image: DEFAULT_CAPTAIN_IMG,
+        startLoc: `${gov} - ${city}`,
+        targetLoc: target,
+        shift: shift,
+        serialNo: serialNo,
+        isVerified: true,
+        status: "جديد",
+        isCertified: false,
+        isLive: false,
+        carModel: car,
+        carColor: "",
+        carNo: "",
+        price: price || "حسب الاتفاق",
+        lineType: "مختلط",
+        rating: 5.0,
+        vacantSeats: 4,
+        criteria: { punctuality: 5.0, safety: 5.0, cleanliness: 5.0, behavior: 5.0 },
+        students: [],
+        pendingRequests: [],
+        createdAt: Date.now()
+      };
+
+      await saveCaptainDoc(newCap);
+
+      currentCaptainLoginPhone = phone;
+      currentCaptainLoginPassCode = passCode;
+      localStorage.setItem('masar_captain_phone', phone);
+      localStorage.setItem('masar_captain_passcode', passCode);
+
+      trackUserPresence();
+
+      let text = `*طلب تسجيل كابتن - تطبيق مسار*%0Aالاسم: ${encodeURIComponent(name)}%0Aالواتساب: ${encodeURIComponent(phone)}%0Aالرمز السري: ${encodeURIComponent(passCode)}%0Aالرقم التسلسلي: ${encodeURIComponent(serialNo)}%0Aالمنطقة: ${encodeURIComponent(gov + ' - ' + city)}%0Aنوع الدوام: ${encodeURIComponent(shift)}%0Aالسعر المحدد: ${encodeURIComponent(price)}%0Aالوجهة: ${encodeURIComponent(target)}%0Aتفاصيل المركبة: ${encodeURIComponent(car)}`;
+
+      window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${text}`, '_blank');
+      e.target.reset();
+      closeInitialStartModal();
+      alert(`تم إرسال طلب الكابتن بنجاح وسوف يظهر في لوحة المشرفين للمراجعة ✅\nالرقم التسلسلي الخاص بك هو: ${serialNo}`);
+
+      navigateToView('captainSettingsView');
+    }
+
+    function trackUserPresence() {
+      try {
+        let role = "زائر";
+        let name = "زائر التطبيق";
+        let phone = "";
+        let startLoc = "";
+        let targetLoc = "";
+        let status = "جديد";
+
+        const captain = captainsData.find(c => c.passCode && c.passCode === currentCaptainLoginPassCode);
+        if (captain) {
+          role = "كابتن";
+          name = captain.name;
+          phone = captain.phone;
+          startLoc = captain.startLoc || '';
+          targetLoc = captain.targetLoc || '';
+          status = captain.status || 'جديد';
+        } else {
+          const student = studentsData.find(s => s.passCode && s.passCode === currentUserSettingsPassCode);
+          if (student) {
+            role = student.type === 'مدرسة' ? "طالب مدرسة" : "طالب جامعة";
+            name = student.name;
+            phone = student.phone;
+            startLoc = student.startLoc || '';
+            targetLoc = student.targetLoc || '';
+            status = student.status || 'جديد';
+          }
+        }
+
+        let deviceId = localStorage.getItem('masar_device_presence_id');
+        if (!deviceId) {
+          deviceId = 'dev_' + Date.now() + '_' + Math.floor(Math.random() * 100000);
+          localStorage.setItem('masar_device_presence_id', deviceId);
+        }
+
+        const docId = phone ? ('u_' + phone.replace(/[\s+]/g, '')) : deviceId;
+
+        db.collection("active_presence").doc(docId).set({
+          id: docId,
+          name: name,
+          role: role,
+          phone: phone,
+          startLoc: startLoc,
+          targetLoc: targetLoc,
+          status: status,
+          lastActive: Date.now()
+        }, { merge: true }).catch(e => console.warn("Presence update error:", e));
+      } catch(e) { console.warn("Presence error:", e); }
+    }
+
+    async function deleteOnlinePresenceDoc(docId) {
+      if (!confirm("هل أنت متأكد من حذف هذا المتواجد بشكل نهائي من القائمة؟")) return;
+      try {
+        await db.collection("active_presence").doc(docId).delete();
+        alert("تم الحذف بشكل نهائي من قائمة المتواجدين حالياً ✅");
+        renderAdminContent();
+      } catch (err) {
+        alert("خطأ في عملية الحذف: " + err.message);
+      }
+    }
+
+    function formatLastActiveTime(ts) {
+      if (!ts) return 'غير محدد';
+      const diffSec = Math.floor((Date.now() - ts) / 1000);
+      if (diffSec < 60) return 'متواجد الآن (قبل ثوانٍ)';
+      const diffMin = Math.floor(diffSec / 60);
+      if (diffMin < 60) return `قبل ${diffMin} دقيقة`;
+      const diffHours = Math.floor(diffMin / 60);
+      if (diffHours < 24) return `قبل ${diffHours} ساعة`;
+      return new Date(ts).toLocaleString('ar-IQ');
+    }
+
+    function formatPriceInput(input) {
+      let val = input.value.replace(/[^0-9]/g, '');
+      if (val) {
+        input.value = Number(val).toLocaleString('en-US');
+      } else {
+        input.value = '';
+      }
+    }
+
+    function togglePasswordVisibility(inputId, btn) {
+      const input = document.getElementById(inputId);
+      if (!input) return;
+      if (input.type === 'password') {
+        input.type = 'text';
+        btn.innerText = 'visibility_off';
+      } else {
+        input.type = 'password';
+        btn.innerText = 'visibility';
+      }
+    }
+
+    function isPasswordWeak(val) {
+      const cleanVal = (val || '').trim();
+      if (!cleanVal) return true;
+      if (WEAK_PASSWORDS.includes(cleanVal)) return true;
+      return captainsData.some(c => c.passCode === cleanVal) || studentsData.some(s => s.passCode === cleanVal);
+    }
+
+    function checkWeakPassword(val, warningElId) {
+      const warningEl = document.getElementById(warningElId);
+      if (!warningEl) return;
+      
+      const cleanVal = val.trim();
+      if (!cleanVal) {
+        warningEl.style.display = 'none';
+        return;
+      }
+      
+      let isWeak = isPasswordWeak(cleanVal);
+      
+      if (isWeak) {
+        warningEl.style.display = 'block';
+        warningEl.innerText = 'هذا رمز ضعيف اكتب رمز اقوى';
+      } else {
+        warningEl.style.display = 'none';
+      }
+    }
+
+    function updateDirectBookingBtnUI() {
+      const btnText = document.getElementById('directBookingBtnText');
+      const btn = document.getElementById('directBookingToggleBtn');
+      if (btnText && btn) {
+        if (isDirectPhoneBookingEnabled) {
+          btnText.innerText = 'حجز الهاتف المباشر';
+          btn.style.backgroundColor = 'var(--primary)';
+          btn.style.color = '#ffffff';
+        } else {
+          btnText.innerText = 'حجز الواتساب العام';
+          btn.style.backgroundColor = 'var(--btn-bg-soft)';
+          btn.style.color = 'var(--text-color)';
+        }
+      }
+    }
+
+    function toggleDirectBookingMode() {
+      isDirectPhoneBookingEnabled = !isDirectPhoneBookingEnabled;
+      localStorage.setItem('masar_direct_booking', isDirectPhoneBookingEnabled);
+      updateDirectBookingBtnUI();
+      if (document.getElementById('captainsView').classList.contains('active')) renderPublicCaptainsView();
+      alert(isDirectPhoneBookingEnabled ? "تم تفعيل نمط الحجز المباشر عبر هاتف الكابتن المسجل ✅" : "تم تفعيل نمط الحجز عبر رقم الواتساب العام 📱");
+    }
+
+    function toggleMap(mapId) {
+      const el = document.getElementById(mapId);
+      if (el) {
+        el.style.display = (el.style.display === 'none' || el.style.display === '') ? 'block' : 'none';
+      }
+    }
+
+    function copyToClipboard(text) {
+      if (!text) return;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+          alert('تم نسخ النص بنجاح: ' + text);
+        }).catch(() => {
+          fallbackCopy(text);
+        });
+      } else {
+        fallbackCopy(text);
+      }
+    }
+
+    function fallbackCopy(text) {
+      const el = document.createElement('textarea');
+      el.value = text;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand('copy');
+      document.body.removeChild(el);
+      alert('تم نسخ النص بنجاح: ' + text);
+    }
+
     function calculateRouteETA(lat1, lon1, lat2, lon2) {
       if (!lat1 || !lon1 || !lat2 || !lon2) return null;
       const R = 6371;
@@ -1680,6 +2327,11 @@
       window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent('السلام عليكم، أود تقديم طلب خط يومي عبر تطبيق مسار')}`, '_blank');
     }
 
+    function openForgotPasswordSupport(role) {
+      const msg = encodeURIComponent(`السلام عليكم، نسيت الرمز السري الخاص بحسابي (${role}) في تطبيق مسار.`);
+      window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${msg}`, '_blank');
+    }
+
     auth.onAuthStateChanged((user) => {
       isAdminLoggedIn = !!user;
       if (!user && document.getElementById('adminView').classList.contains('active')) {
@@ -1708,7 +2360,6 @@
       }, 300);
     }
 
-    /* التعديل 1: تحسين جلب البيانات لدعم البحث التقريبي لجميع أشرطة البحث */
     async function loadCaptains(isNextPage = false) {
       if (isFetchingCaptains) return;
       if (isNextPage && !hasMoreCaptains) return;
@@ -1754,9 +2405,22 @@
         isFetchingCaptains = false;
         updateAdminTopStats();
         if (document.getElementById('captainsView').classList.contains('active')) renderPublicCaptainsView();
+        if (document.getElementById('mapView').classList.contains('active')) renderMapView();
         if (document.getElementById('adminView').classList.contains('active')) renderAdminContent();
         if (document.getElementById('userSettingsView').classList.contains('active')) renderUserSettingsViewResults();
         if (document.getElementById('captainSettingsView').classList.contains('active')) renderCaptainSettingsResults();
+      }
+    }
+
+    async function loadCaptainChanges() {
+      try {
+        const snapshot = await db.collection("captain_changes").get();
+        captainChangesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        if (document.getElementById('adminView').classList.contains('active') && activeAdminTab === 'captainChanges') {
+          renderAdminContent();
+        }
+      } catch (e) {
+        console.warn("خطأ جلب تغييرات الكباتن:", e);
       }
     }
 
@@ -1879,7 +2543,6 @@
       updateAdminTopStats();
     }
 
-    /* التعديل 2: تطبيق الوضع المحفوظ عند التحميل */
     function applySavedTheme() {
       const savedTheme = localStorage.getItem('masar_theme');
       if (savedTheme === 'dark') {
@@ -1899,38 +2562,51 @@
 
     window.addEventListener('DOMContentLoaded', () => {
       applySavedTheme();
+      updateDirectBookingBtnUI();
       loadCaptains();
+      loadCaptainChanges();
       loadStudents();
       listenToAdminBroadcast();
       listenToTickerMessage();
       initCaptainMapPicker();
+      trackUserPresence();
+      setInterval(trackUserPresence, 60000);
+
+      if (currentUserSettingsPassCode || currentCaptainLoginPassCode) {
+        closeInitialStartModal();
+      }
     });
 
     function initCaptainMapPicker() {
-      const el = document.getElementById('captainMapPicker');
-      if (!el || typeof mapboxgl === 'undefined') return;
-      try {
-        const map = new mapboxgl.Map({
-          container: 'captainMapPicker',
-          style: 'mapbox://styles/mapbox/streets-v11',
-          center: [43.49, 33.35],
-          zoom: 11
-        });
-        let marker = null;
-        map.on('click', (e) => {
-          if (marker) marker.remove();
-          marker = new mapboxgl.Marker({ color: '#059669' })
-            .setLngLat([e.lngLat.lng, e.lngLat.lat])
-            .addTo(map);
-          document.getElementById('capStartLat').value = e.lngLat.lat;
-          document.getElementById('capStartLng').value = e.lngLat.lng;
-        });
-      } catch(err) {
-        console.warn("Mapbox map picker init:", err);
+      const cityInput = document.getElementById('capCity');
+      const govInput = document.getElementById('capGov');
+      const targetInput = document.getElementById('capTarget');
+      const iframe = document.getElementById('captainMapIframe');
+
+      function updateMap() {
+        const gov = govInput ? govInput.value.trim() : '';
+        const city = cityInput ? cityInput.value.trim() : '';
+        const startLoc = `${gov} ${city}`.trim();
+        const targetLoc = targetInput ? targetInput.value.trim() : '';
+
+        if (iframe) {
+          if (startLoc && targetLoc) {
+            iframe.src = `https://maps.google.com/maps?saddr=${encodeURIComponent(startLoc)}&daddr=${encodeURIComponent(targetLoc)}&t=&z=12&ie=UTF8&iwloc=&output=embed`;
+          } else if (startLoc) {
+            iframe.src = `https://maps.google.com/maps?q=${encodeURIComponent(startLoc)}&t=&z=12&ie=UTF8&iwloc=&output=embed`;
+          } else if (targetLoc) {
+            iframe.src = `https://maps.google.com/maps?q=${encodeURIComponent(targetLoc)}&t=&z=12&ie=UTF8&iwloc=&output=embed`;
+          } else {
+            iframe.src = `https://maps.google.com/maps?q=Iraq&t=&z=9&ie=UTF8&iwloc=&output=embed`;
+          }
+        }
       }
+
+      if (cityInput) cityInput.addEventListener('input', updateMap);
+      if (govInput) govInput.addEventListener('input', updateMap);
+      if (targetInput) targetInput.addEventListener('input', updateMap);
     }
 
-    /* التعديل 2: حفظ الوضع الليلي/النهاري في localStorage */
     function toggleTheme() {
       document.body.classList.toggle('dark-mode');
       const isDark = document.body.classList.contains('dark-mode');
@@ -1945,11 +2621,16 @@
 
       document.getElementById(viewId).classList.add('active');
 
+      trackUserPresence();
+
       if (viewId === 'homeView') {
         document.getElementById('navHome').classList.add('active');
       } else if (viewId === 'captainsView') {
         document.getElementById('navCaptains').classList.add('active');
         renderPublicCaptainsView();
+      } else if (viewId === 'mapView') {
+        document.getElementById('navMap').classList.add('active');
+        renderMapView();
       } else if (viewId === 'menuView') {
         document.getElementById('navMenu').classList.add('active');
       } else if (viewId === 'userSettingsView') {
@@ -1967,6 +2648,11 @@
       }
 
       window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function renderMapView() {
+      const activeList = captainsData.filter(c => c.status === 'نشط' || c.status === 'معتمد');
+      renderPublicCaptainsOverviewMap(activeList);
     }
 
     function openAdminViewWithPin() {
@@ -2038,18 +2724,24 @@
       const isUni = type === 'جامعة';
       const name = sanitizeInput(document.getElementById(isUni ? 'uniName' : 'schName').value);
       const phone = sanitizeInput(document.getElementById(isUni ? 'uniPhone' : 'schPhone').value);
+      const passCode = sanitizeInput(document.getElementById(isUni ? 'uniPassCode' : 'schPassCode').value);
       const gov = sanitizeInput(document.getElementById(isUni ? 'uniGov' : 'schGov').value);
       const city = sanitizeInput(document.getElementById(isUni ? 'uniCity' : 'schCity').value);
       const target = sanitizeInput(document.getElementById(isUni ? 'uniTarget' : 'schTarget').value);
       const shift = document.getElementById(isUni ? 'uniShift' : 'schShift').value;
 
-      if (!validateInputText(name) || !validateInputText(target)) {
-        alert("يرجى إدخال أسماء وبيانات صحيحة ❌");
+      if (!validateInputText(name) || !validateInputText(target) || !validateInputText(passCode)) {
+        alert("يرجى إدخال أسماء وبيانات والرمز السري بشكل صحيح ❌");
         return;
       }
 
       if (!validatePhone(phone)) {
         alert("يرجى إدخال رقم هاتف عراقي صحيح (مثال: 07700000000) ❌");
+        return;
+      }
+
+      if (isPasswordWeak(passCode)) {
+        alert("اكتب رمز اقوى");
         return;
       }
 
@@ -2060,42 +2752,62 @@
         type: type,
         name: name,
         phone: phone,
+        passCode: passCode,
         serialNo: serialNo,
         isVerified: true,
         startLoc: `${gov} - ${city}`,
         targetLoc: target,
+        shift: shift,
         status: "جديد",
         createdAt: Date.now()
       };
 
       await saveStudentDoc(newSt);
 
-      let text = `*طلب خط ${type} - تطبيق مسار*%0Aالاسم: ${encodeURIComponent(name)}%0Aالواتساب: ${encodeURIComponent(phone)}%0Aالرقم التسلسلي: ${encodeURIComponent(serialNo)}%0Aنقطة الانطلاق: ${encodeURIComponent(gov + ' - ' + city)}%0Aالوجهة: ${encodeURIComponent(target)}%0Aالدوام: ${encodeURIComponent(shift)}`;
+      currentUserSettingsPhone = phone;
+      currentUserSettingsPassCode = passCode;
+      localStorage.setItem('masar_user_phone', phone);
+      localStorage.setItem('masar_user_passcode', passCode);
+
+      trackUserPresence();
+
+      let text = `*طلب خط ${type} - تطبيق مسار*%0Aالاسم: ${encodeURIComponent(name)}%0Aالواتساب: ${encodeURIComponent(phone)}%0Aالرمز السري: ${encodeURIComponent(passCode)}%0Aالرقم التسلسلي: ${encodeURIComponent(serialNo)}%0Aنقطة الانطلاق: ${encodeURIComponent(gov + ' - ' + city)}%0Aالوجهة: ${encodeURIComponent(target)}%0Aالدوام: ${encodeURIComponent(shift)}`;
 
       window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${text}`, '_blank');
       e.target.reset();
       closeModal(isUni ? 'uniModal' : 'schoolModal');
+      closeInitialStartModal();
       alert(`تم تسجيل طلبك بنجاح ✅\nالرقم التسلسلي الخاص بك هو: ${serialNo}`);
+
+      navigateToView('userSettingsView');
     }
 
     async function handleCaptainFormSubmit(e) {
       e.preventDefault();
       const name = sanitizeInput(document.getElementById('capName').value);
       const phone = sanitizeInput(document.getElementById('capPhone').value);
+      const passCode = sanitizeInput(document.getElementById('capPassCode').value);
       const gov = sanitizeInput(document.getElementById('capGov').value);
       const city = sanitizeInput(document.getElementById('capCity').value);
+      const price = sanitizeInput(document.getElementById('capPrice').value);
       const target = sanitizeInput(document.getElementById('capTarget').value);
+      const shift = document.getElementById('capShift') ? document.getElementById('capShift').value : 'صباحي';
       const car = sanitizeInput(document.getElementById('capCar').value);
       const startLat = document.getElementById('capStartLat').value || null;
       const startLng = document.getElementById('capStartLng').value || null;
 
-      if (!validateInputText(name) || !validateInputText(target) || !validateInputText(car)) {
-        alert("يرجى ملء جميع الحقول المطلوب بشكل صحيح ❌");
+      if (!validateInputText(name) || !validateInputText(target) || !validateInputText(car) || !validateInputText(passCode) || !validateInputText(price)) {
+        alert("يرجى ملء جميع الحقول المطلوب والرمز السري بشكل صحيح ❌");
         return;
       }
 
       if (!validatePhone(phone)) {
         alert("يرجى إدخال رقم هاتف عراقي صحيح (مثال: 07700000000) ❌");
+        return;
+      }
+
+      if (isPasswordWeak(passCode)) {
+        alert("اكتب رمز اقوى");
         return;
       }
 
@@ -2105,35 +2817,49 @@
         id: "cap_" + Date.now(),
         name: name,
         phone: phone,
+        passCode: passCode,
         image: DEFAULT_CAPTAIN_IMG,
         startLoc: `${gov} - ${city}`,
         targetLoc: target,
+        shift: shift,
         startLat: startLat,
         startLng: startLng,
         serialNo: serialNo,
         isVerified: true,
         status: "جديد",
         isCertified: false,
+        isLive: false,
         carModel: car,
         carColor: "",
         carNo: "",
-        price: "حسب الاتفاق",
+        price: price || "حسب الاتفاق",
         lineType: "مختلط",
         rating: 5.0,
         vacantSeats: 4,
         criteria: { punctuality: 5.0, safety: 5.0, cleanliness: 5.0, behavior: 5.0 },
         students: [],
+        pendingRequests: [],
         createdAt: Date.now()
       };
 
       await saveCaptainDoc(newCap);
 
-      let text = `*طلب تسجيل كابتن - تطبيق مسار*%0Aالاسم: ${encodeURIComponent(name)}%0Aالواتساب: ${encodeURIComponent(phone)}%0Aالرقم التسلسلي: ${encodeURIComponent(serialNo)}%0Aالمنطقة: ${encodeURIComponent(gov + ' - ' + city)}%0Aالوجهة: ${encodeURIComponent(target)}%0Aتفاصيل المركبة: ${encodeURIComponent(car)}`;
+      currentCaptainLoginPhone = phone;
+      currentCaptainLoginPassCode = passCode;
+      localStorage.setItem('masar_captain_phone', phone);
+      localStorage.setItem('masar_captain_passcode', passCode);
+
+      trackUserPresence();
+
+      let text = `*طلب تسجيل كابتن - تطبيق مسار*%0Aالاسم: ${encodeURIComponent(name)}%0Aالواتساب: ${encodeURIComponent(phone)}%0Aالرمز السري: ${encodeURIComponent(passCode)}%0Aالرقم التسلسلي: ${encodeURIComponent(serialNo)}%0Aالمنطقة: ${encodeURIComponent(gov + ' - ' + city)}%0Aنوع الدوام: ${encodeURIComponent(shift)}%0Aالسعر المحدد: ${encodeURIComponent(price)}%0Aالوجهة: ${encodeURIComponent(target)}%0Aتفاصيل المركبة: ${encodeURIComponent(car)}`;
 
       window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${text}`, '_blank');
       e.target.reset();
       closeModal('captainModal');
+      closeInitialStartModal();
       alert(`تم إرسال طلب الكابتن بنجاح وسوف يظهر في لوحة المشرفين للمراجعة ✅\nالرقم التسلسلي الخاص بك هو: ${serialNo}`);
+
+      navigateToView('captainSettingsView');
     }
 
     function renderRatingCriteriaHTML(criteria) {
@@ -2199,10 +2925,338 @@
       const cap = captainsData.find(c => c.id === captainId);
       if (!cap) return;
       await saveCaptainDoc(cap);
-      alert("تم إرسال وتقديم التقييم للكابتن بنجاح ⭐ شكرًا لمشاركتك!");
+      alert("تقييمك ارسل الى المشرفين بسريه تامه");
     }
 
-    /* التعديل 1: نظام الفلترة الذكي للخطوط حسب نقطة الانطلاق والمحافظة بشكل تقريبي */
+    async function toggleCaptainLiveTracking(captainId) {
+      const cap = captainsData.find(c => c.id === captainId);
+      if (!cap) return;
+
+      if (captainWatchId !== null) {
+        navigator.geolocation.clearWatch(captainWatchId);
+        captainWatchId = null;
+        cap.isLive = false;
+        await saveCaptainDoc(cap);
+        renderCaptainSettingsResults();
+        alert("تم إيقاف ميزة مشاركة الموقع المباشر 🔴");
+      } else {
+        if (!navigator.geolocation) {
+          alert("خدمة تحديد الموقع (GPS) غير مدعومة في متصفحك ❌");
+          return;
+        }
+
+        cap.isLive = true;
+        await saveCaptainDoc(cap);
+
+        let lastSentTime = 0;
+        captainWatchId = navigator.geolocation.watchPosition(
+          async (pos) => {
+            const now = Date.now();
+            if (now - lastSentTime >= 3000) {
+              lastSentTime = now;
+              const lat = pos.coords.latitude;
+              const lng = pos.coords.longitude;
+              const heading = pos.coords.heading || 0;
+
+              cap.lat = lat;
+              cap.lng = lng;
+              cap.heading = heading;
+              cap.updatedAt = now;
+
+              await db.collection("captains").doc(captainId).update({
+                isLive: true,
+                lat: lat,
+                lng: lng,
+                heading: heading,
+                updatedAt: now
+              }).catch(e => console.error("خطأ في تحديث الإحداثيات:", e));
+            }
+          },
+          (err) => {
+            console.warn("خطأ في جلب الموقع المباشر:", err);
+          },
+          {
+            enableHighAccuracy: true,
+            maximumAge: 3000,
+            timeout: 10000
+          }
+        );
+
+        renderCaptainSettingsResults();
+        alert("تم بدء الرحلة وبث الموقع المباشر بنجاح 🟢");
+      }
+    }
+
+    function renderPublicCaptainsOverviewMap(list) {
+      const mapContainer = document.getElementById('captainsMainMap');
+      if (!mapContainer) return;
+
+      setTimeout(() => {
+        if (!captainsOverviewMap) {
+          captainsOverviewMap = L.map('captainsMainMap').setView([33.3152, 44.3661], 7);
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; OpenStreetMap contributors'
+          }).addTo(captainsOverviewMap);
+        }
+
+        captainsOverviewMarkers.forEach(m => captainsOverviewMap.removeLayer(m));
+        captainsOverviewMarkers = [];
+
+        const busIcon = L.divIcon({
+          className: 'custom-bus-overview-marker',
+          html: `<div style="background:#059669; color:white; border-radius:50%; width:32px; height:32px; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 6px rgba(0,0,0,0.3); border:2px solid white;"><span class="material-icons-outlined" style="font-size:18px;">directions_bus</span></div>`,
+          iconSize: [32, 32],
+          iconAnchor: [16, 16]
+        });
+
+        const bounds = [];
+        list.forEach(c => {
+          const lat = c.lat || c.startLat;
+          const lng = c.lng || c.startLng;
+          if (lat && lng) {
+            const marker = L.marker([lat, lng], { icon: busIcon })
+              .addTo(captainsOverviewMap)
+              .bindPopup(`<b>الكابتن: ${escapeHTML(c.name)}</b><br>من: ${escapeHTML(c.startLoc || '')} ➔ إلى: ${escapeHTML(c.targetLoc || '')}<br>الهاتف: ${escapeHTML(c.phone || '')}`);
+            captainsOverviewMarkers.push(marker);
+            bounds.push([lat, lng]);
+          }
+        });
+
+        if (bounds.length > 0) {
+          captainsOverviewMap.fitBounds(bounds, { padding: [30, 30], maxZoom: 13 });
+        } else {
+          captainsOverviewMap.setView([33.3152, 44.3661], 7);
+        }
+
+        captainsOverviewMap.invalidateSize();
+      }, 100);
+    }
+
+    function openLiveTrackingModal(captainId) {
+      const cap = captainsData.find(c => c.id === captainId);
+      if (!cap) return;
+
+      document.getElementById('trackCapName').innerText = cap.name;
+      document.getElementById('trackDistance').innerText = "جاري الحساب...";
+      document.getElementById('trackETA').innerText = "جاري الحساب...";
+      document.getElementById('trackLastUpdate').innerText = "الآن";
+
+      const panel = document.getElementById('liveTrackingFixedPanel');
+      if (panel) {
+        panel.style.display = 'block';
+        panel.scrollIntoView({ behavior: 'smooth' });
+      }
+
+      setTimeout(() => {
+        if (leafletMap) {
+          leafletMap.remove();
+          leafletMap = null;
+        }
+
+        const initialLat = cap.lat || 33.3152;
+        const initialLng = cap.lng || 44.3661;
+
+        leafletMap = L.map('leafletMapContainer').setView([initialLat, initialLng], 14);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19,
+          attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(leafletMap);
+
+        const busIcon = L.divIcon({
+          className: 'custom-bus-marker',
+          html: `<div style="background:#059669; color:white; border-radius:50%; width:36px; height:36px; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,0.4); border:2px solid white;"><span class="material-icons-outlined" style="font-size:20px;">directions_bus</span></div>`,
+          iconSize: [36, 36],
+          iconAnchor: [18, 18]
+        });
+
+        const studentIcon = L.divIcon({
+          className: 'custom-student-marker',
+          html: `<div style="background:#2563eb; color:white; border-radius:50%; width:32px; height:32px; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,0.4); border:2px solid white;"><span class="material-icons-outlined" style="font-size:18px;">person_pin</span></div>`,
+          iconSize: [32, 32],
+          iconAnchor: [16, 16]
+        });
+
+        busMarker = L.marker([initialLat, initialLng], { icon: busIcon }).addTo(leafletMap).bindPopup(`<b>حافلة الكابتن: ${escapeHTML(cap.name)}</b>`);
+
+        let studentLat = null;
+        let studentLng = null;
+
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            (pos) => {
+              studentLat = pos.coords.latitude;
+              studentLng = pos.coords.longitude;
+              studentMarker = L.marker([studentLat, studentLng], { icon: studentIcon }).addTo(leafletMap).bindPopup("<b>موقعي الحالي 📍</b>");
+              
+              if (cap.lat && cap.lng) {
+                updateTrackingMetrics(studentLat, studentLng, cap.lat, cap.lng);
+              }
+            },
+            (err) => console.warn("GPS Student location warning:", err)
+          );
+        }
+
+        trackingUnsubscribe = db.collection("captains").doc(captainId).onSnapshot((doc) => {
+          if (doc.exists) {
+            const data = doc.data();
+            if (data.lat && data.lng) {
+              const newLat = data.lat;
+              const newLng = data.lng;
+
+              busMarker.setLatLng([newLat, newLng]);
+              leafletMap.panTo([newLat, newLng]);
+
+              const updateDate = data.updatedAt ? new Date(data.updatedAt).toLocaleTimeString('ar-IQ') : 'الآن';
+              document.getElementById('trackLastUpdate').innerText = updateDate;
+
+              if (studentLat && studentLng) {
+                updateTrackingMetrics(studentLat, studentLng, newLat, newLng);
+              }
+            }
+          }
+        });
+      }, 200);
+    }
+
+    function updateTrackingMetrics(sLat, sLng, cLat, cLng) {
+      if (!sLat || !sLng || !cLat || !cLng) return;
+
+      const eta = calculateRouteETA(sLat, sLng, cLat, cLng);
+      if (eta) {
+        document.getElementById('trackDistance').innerText = `${eta.distance} كم`;
+        document.getElementById('trackETA').innerText = `${eta.duration} دقيقة تقريباً`;
+      }
+
+      const pathCoords = [[sLat, sLng], [cLat, cLng]];
+      if (routePolyline) {
+        routePolyline.setLatLngs(pathCoords);
+      } else {
+        routePolyline = L.polyline(pathCoords, { color: '#059669', weight: 4, dashArray: '6, 8' }).addTo(leafletMap);
+      }
+
+      const bounds = L.latLngBounds(pathCoords);
+      leafletMap.fitBounds(bounds, { padding: [40, 40] });
+    }
+
+    function closeLiveTrackingModal() {
+      if (trackingUnsubscribe) {
+        trackingUnsubscribe();
+        trackingUnsubscribe = null;
+      }
+      if (leafletMap) {
+        leafletMap.remove();
+        leafletMap = null;
+      }
+      busMarker = null;
+      studentMarker = null;
+      routePolyline = null;
+      const panel = document.getElementById('liveTrackingFixedPanel');
+      if (panel) panel.style.display = 'none';
+    }
+
+    /* دالة طلب الارتباط مع الكابتن من بطاقة الكابتن */
+    async function requestCaptainLink(captainId) {
+      const student = studentsData.find(s => (s.passCode && s.passCode === currentUserSettingsPassCode) || (s.phone && s.phone === currentUserSettingsPhone));
+
+      if (!student || !student.name || !student.phone) {
+        alert("يرجى تسجيل بياناتك أولاً من إعدادات المستخدم أو الشاشة الرئيسية لإرسال طلب الارتباط ❌");
+        navigateToView('userSettingsView');
+        return;
+      }
+
+      const cap = captainsData.find(c => c.id === captainId);
+      if (!cap) return;
+
+      if (!cap.pendingRequests) cap.pendingRequests = [];
+
+      const isAlreadyLinked = (cap.students && Array.isArray(cap.students) && cap.students.some(st => (typeof st === 'object' && (st.id === student.id || st.phone === student.phone)) || st === student.id || st === student.phone));
+      if (isAlreadyLinked) {
+        alert("أنت مرتبط بالفعل مع هذا الكابتن ✅");
+        return;
+      }
+
+      const existingReq = cap.pendingRequests.find(r => r.studentId === student.id || r.studentPhone === student.phone);
+      if (existingReq) {
+        alert("انتضر موافق الكابتن");
+        return;
+      }
+
+      const requestObj = {
+        studentId: student.id,
+        studentName: student.name,
+        studentStartLoc: student.startLoc || '',
+        studentTargetLoc: student.targetLoc || '',
+        studentPhone: student.phone,
+        requestedAt: Date.now()
+      };
+
+      cap.pendingRequests.push(requestObj);
+
+      await db.collection("captains").doc(captainId).set({
+        pendingRequests: cap.pendingRequests
+      }, { merge: true });
+
+      alert("انتضر موافق الكابتن");
+    }
+
+    /* دالة موافقة الكابتن على طلب الارتباط */
+    async function approveStudentLinkRequest(captainId, studentId) {
+      const cap = captainsData.find(c => c.id === captainId);
+      if (!cap || !cap.pendingRequests) return;
+
+      const reqIdx = cap.pendingRequests.findIndex(r => r.studentId === studentId);
+      if (reqIdx === -1) return;
+
+      const req = cap.pendingRequests[reqIdx];
+      cap.pendingRequests.splice(reqIdx, 1);
+
+      if (!cap.students) cap.students = [];
+
+      let stObj = studentsData.find(s => s.id === studentId || (s.phone && s.phone === req.studentPhone));
+      if (stObj) {
+        stObj.captainId = cap.id;
+        await saveStudentDoc(stObj);
+      }
+
+      cap.students.push({
+        id: req.studentId,
+        name: req.studentName,
+        phone: req.studentPhone,
+        startLoc: req.studentStartLoc,
+        targetLoc: req.studentTargetLoc
+      });
+
+      if (Number(cap.vacantSeats) > 0) {
+        cap.vacantSeats = Number(cap.vacantSeats) - 1;
+      }
+
+      await db.collection("captains").doc(captainId).set({
+        students: cap.students,
+        vacantSeats: cap.vacantSeats,
+        pendingRequests: cap.pendingRequests
+      }, { merge: true });
+
+      alert(`تمت الموافقة وربط المستخدم (${req.studentName}) مع الكابتن مباشرة ✅`);
+      renderCaptainSettingsResults();
+    }
+
+    /* دالة رفض طلب الارتباط */
+    async function rejectStudentLinkRequest(captainId, studentId) {
+      const cap = captainsData.find(c => c.id === captainId);
+      if (!cap || !cap.pendingRequests) return;
+
+      cap.pendingRequests = cap.pendingRequests.filter(r => r.studentId !== studentId);
+
+      await db.collection("captains").doc(captainId).set({
+        pendingRequests: cap.pendingRequests
+      }, { merge: true });
+
+      alert("تم رفض طلب الارتباط");
+      renderCaptainSettingsResults();
+    }
+
     function renderPublicCaptainsView() {
       const container = document.getElementById('publicCaptainsListContainer');
       const loadMoreContainer = document.getElementById('publicCaptainsLoadMoreContainer');
@@ -2241,7 +3295,6 @@
         const certBadge = c.isCertified ? `<span class="badge-certified"><span class="material-icons-outlined" style="font-size:0.8rem;">verified</span> معتمد</span>` : '';
         const seatsText = Number(c.vacantSeats) > 0 ? `<span style="color:var(--primary); font-weight:800;">${c.vacantSeats} مقاعد</span>` : `<span style="color:#ef4444; font-weight:800;">مكتمل</span>`;
 
-        // احتساب المسافة والوقت عند وجود إحداثيات
         let routeEtaHtml = '';
         if (c.startLat && c.startLng && c.targetLat && c.targetLng) {
           const eta = calculateRouteETA(c.startLat, c.startLng, c.targetLat, c.targetLng);
@@ -2255,7 +3308,11 @@
         }
 
         const bookingText = encodeURIComponent(`السلام عليكم، أود حجز خط مع الكابتن: ${c.name}\nنقطة الانطلاق: ${c.startLoc || 'غير محدد'}\nنقطة الوصول: ${c.targetLoc || 'غير محدد'}`);
-        const bookingWhatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${bookingText}`;
+        const cleanCaptainPhone = c.phone ? c.phone.replace(/[\s-]/g, '') : '';
+        const bookingUrl = isDirectPhoneBookingEnabled && cleanCaptainPhone
+          ? `tel:${cleanCaptainPhone}`
+          : `https://wa.me/${WHATSAPP_NUMBER}?text=${bookingText}`;
+        const targetAttr = isDirectPhoneBookingEnabled && cleanCaptainPhone ? '' : 'target="_blank"';
 
         html += `
           <div class="admin-item-card">
@@ -2267,8 +3324,8 @@
                   <div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">⭐ ${c.rating || 5.0} / 5.0</div>
                 </div>
               </div>
-              <a href="${bookingWhatsappUrl}" target="_blank" class="whatsapp-badge">
-                <span class="material-icons-outlined">chat</span> حجز
+              <a href="${bookingUrl}" ${targetAttr} class="whatsapp-badge">
+                <span class="material-icons-outlined">${isDirectPhoneBookingEnabled ? 'phone' : 'book_online'}</span> حجز مقعد
               </a>
             </div>
 
@@ -2291,16 +3348,25 @@
               </div>
               <div class="compact-info-item">
                 <span class="material-icons-outlined">event_seat</span>
-                <div><strong>المقاعد:</strong> ${seatsText}</div>
+                <div><strong>المقاعد الشاغرة:</strong> ${seatsText}</div>
               </div>
               <div class="compact-info-item">
                 <span class="material-icons-outlined">wc</span>
                 <div><strong>الخط:</strong> ${escapeHTML(c.lineType || 'مختلط')}</div>
               </div>
+              <div class="compact-info-item">
+                <span class="material-icons-outlined">schedule</span>
+                <div><strong>نوع الدوام:</strong> ${escapeHTML(c.shift || 'صباحي')}</div>
+              </div>
               ${routeEtaHtml}
             </div>
 
             ${renderRatingCriteriaHTML(c.criteria)}
+
+            <!-- زر ارتباط مع الكابتن الخطي المطلوب -->
+            <button class="act-btn-sm btn-green" style="width: 100%; margin-top: 10px; justify-content: center; font-weight: 800; padding: 10px; font-size: 0.88rem;" onclick="requestCaptainLink('${c.id}')">
+              <span class="material-icons-outlined">link</span> ارتباط مع الكابتن
+            </button>
           </div>
         `;
       });
@@ -2321,21 +3387,24 @@
       const logoutBtn = document.getElementById('userLogoutBtn');
       if (!container) return;
 
-      if (!currentUserSettingsPhone) {
+      if (!currentUserSettingsPassCode) {
         if (logoutBtn) logoutBtn.style.display = 'none';
         container.innerHTML = `
           <div class="admin-item-card">
-            <div style="font-size:1rem; font-weight:800; margin-bottom:12px; text-align:center;">تسجيل الدخول لمتابعة الخط والتقييم</div>
+            <div style="font-size:1rem; font-weight:800; margin-bottom:12px; text-align:center;">تسجيل الدخول بالرمز السري</div>
             <form onsubmit="handleUserLogin(event)">
               <div class="form-group">
-                <label>رقم هاتف الطالب المسجل *</label>
-                <input type="tel" class="form-input" id="userLoginPhoneInput" placeholder="07700000000" required>
+                <label>الرمز السري 🔒 *</label>
+                <div style="position: relative; display: flex; align-items: center;">
+                  <input type="password" class="form-input" id="userLoginPassCodeInput" placeholder="أدخل الرمز السري" required style="padding-left: 40px;">
+                  <span class="material-icons-outlined" onclick="togglePasswordVisibility('userLoginPassCodeInput', this)" style="position: absolute; left: 10px; cursor: pointer; color: var(--text-muted); user-select: none;">visibility</span>
+                </div>
               </div>
-              <div class="form-group">
-                <label>الرقم التسلسلي (اختياري)</label>
-                <input type="text" class="form-input" id="userLoginSerialInput" placeholder="مثال: MSR-S1234">
-              </div>
-              <button type="submit" class="submit-btn"><span class="material-icons-outlined">login</span> عرض بيانات الخط والتقييم</button>
+              <button type="submit" class="submit-btn"><span class="material-icons-outlined">login</span> دخول إلى إعدادات المستخدم</button>
+              
+              <button type="button" id="userForgotPassBtn" onclick="openForgotPasswordSupport('طالب')" class="act-btn btn-red" style="display:${userLoginFailedAttempts >= 2 ? 'flex' : 'none'}; width:100%; margin-top:10px; justify-content:center; padding:10px; font-weight:800;">
+                <span class="material-icons-outlined">support_agent</span> نسيان الرمز السري مراسلة الدعم
+              </button>
             </form>
           </div>
         `;
@@ -2347,31 +3416,53 @@
 
     function handleUserLogin(e) {
       e.preventDefault();
-      const phone = sanitizeInput(document.getElementById('userLoginPhoneInput').value);
-      const serial = sanitizeInput(document.getElementById('userLoginSerialInput').value);
+      const passCode = document.getElementById('userLoginPassCodeInput') ? document.getElementById('userLoginPassCodeInput').value.trim() : '';
 
-      if (!validatePhone(phone)) {
-        alert("يرجى إدخال رقم هاتف عراقي صحيح ❌");
+      if (!passCode) {
+        alert("يرجى إدخال الرمز السري ❌");
         return;
       }
 
-      currentUserSettingsPhone = phone;
-      currentUserSettingsSerial = serial;
-      localStorage.setItem('masar_user_phone', phone);
-      localStorage.setItem('masar_user_serial', serial);
+      const matchedStudent = studentsData.find(s => s.passCode && s.passCode === passCode);
 
+      if (!matchedStudent) {
+        userLoginFailedAttempts++;
+        if (userLoginFailedAttempts >= 2) {
+          const forgotBtn = document.getElementById('userForgotPassBtn');
+          if (forgotBtn) forgotBtn.style.display = 'flex';
+          alert("الرمز السري غير صحيح. لقد تجاوزت محاولتين خاطئتين! يمكنك الضغط على نسيان الرمز السري لمراسلة الدعم.");
+        } else {
+          alert(`الرمز السري غير صحيح ❌ (محاولة ${userLoginFailedAttempts} من 2)`);
+        }
+        return;
+      }
+
+      userLoginFailedAttempts = 0;
+      const forgotBtn = document.getElementById('userForgotPassBtn');
+      if (forgotBtn) forgotBtn.style.display = 'none';
+
+      currentUserSettingsPhone = matchedStudent.phone || '';
+      currentUserSettingsPassCode = passCode;
+      localStorage.setItem('masar_user_phone', currentUserSettingsPhone);
+      localStorage.setItem('masar_user_passcode', passCode);
+
+      trackUserPresence();
       renderUserSettingsView();
     }
 
     function logoutUserSession() {
+      if (!confirm("عند تسجيل خروجك لاتستطيع الدخول الابعد ادخال الرمز السري احفض الرمز السري")) return;
       currentUserSettingsPhone = '';
-      currentUserSettingsSerial = '';
+      currentUserSettingsPassCode = '';
       localStorage.removeItem('masar_user_phone');
-      localStorage.removeItem('masar_user_serial');
+      localStorage.removeItem('masar_user_passcode');
+      userLoginFailedAttempts = 0;
       renderUserSettingsView();
     }
 
     async function removeCaptainFromUser(studentId, captainId) {
+      if (!confirm("هل أنت تأكد من إزالة الكابتن من بطاقتك؟")) return;
+
       const st = studentsData.find(s => s.id === studentId);
       if (st) {
         st.captainId = null;
@@ -2392,12 +3483,12 @@
       const container = document.getElementById('userSettingsContainer');
       if (!container) return;
 
-      const student = studentsData.find(s => s.phone && s.phone.replace(/[\s-]/g, '') === currentUserSettingsPhone.replace(/[\s-]/g, ''));
+      const student = studentsData.find(s => s.passCode && s.passCode === currentUserSettingsPassCode);
 
       if (!student) {
         container.innerHTML = `
           <div class="admin-item-card" style="text-align:center;">
-            <p style="font-weight:700; color:var(--text-muted);">لم يتم العثور على طالب مسجل برقم الهاتف: ${escapeHTML(currentUserSettingsPhone)}</p>
+            <p style="font-weight:700; color:var(--text-muted);">لم يتم العثور على طالب مسجل بهذا الرمز السري</p>
             <p style="font-size:0.8rem; margin-top:6px;">يرجى تسجيل الطلب أولاً من الشاشة الرئيسية.</p>
           </div>
         `;
@@ -2428,7 +3519,7 @@
             <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
               <img src="${sanitizeUrl(linkedCaptain.image, DEFAULT_CAPTAIN_IMG)}" class="captain-avatar" alt="كابتن">
               <div>
-                <div style="font-weight:800; font-size:1rem;">${escapeHTML(linkedCaptain.name)} ${linkedCaptain.isCertified ? '<span class="badge-certified"><span class="material-icons-outlined" style="font-size:0.8rem;">verified</span> معتمد</span>' : ''}</div>
+                <div style="font-weight:800; font-size:1rem;">${escapeHTML(linkedCaptain.name)} ${linkedCaptain.isCertified ? '<span class="badge-certified"><span class="material-icons-outlined" style="font-size:0.8rem;">verified</span> معتمد</span>' : ''} ${linkedCaptain.isLive ? '<span class="badge-live"><span class="material-icons-outlined" style="font-size:0.8rem;">sensors</span> مباشر</span>' : ''}</div>
                 <div style="font-size:0.8rem; color:var(--text-muted);">📞 ${escapeHTML(linkedCaptain.phone || 'غير متوفر')}</div>
               </div>
             </div>
@@ -2460,6 +3551,10 @@
               </div>
             </div>
 
+            <button type="button" class="act-btn" onclick="openLiveTrackingModal('${linkedCaptain.id}')" style="width:100%; margin-top:8px; justify-content:center; background-color:var(--primary-light); color:var(--primary); border:1px solid var(--primary); font-weight:800;">
+              <span class="material-icons-outlined">my_location</span> عرض الخريطة التفاعلية للمسار والتتبع 🗺
+            </button>
+
             <div style="margin-top:12px; background:var(--input-bg); padding:10px; border-radius:12px; border:1px solid var(--border-color);">
               <div style="font-weight:800; font-size:0.85rem; color:var(--primary); margin-bottom:8px;">
                 ⭐ تقديم تقييم الكابتن وفق المعايير
@@ -2479,7 +3574,7 @@
         captainHtml = `
           <div class="admin-item-card" style="text-align:center;">
             <p style="font-weight:700; color:var(--text-muted);">لم يتم ربط كابتن بحسابك بعد.</p>
-            <p style="font-size:0.78rem; margin-top:4px;">سيقوم المشرف بربطك بكابتن مناسب قريباً.</p>
+            <p style="font-size:0.78rem; margin-top:4px;">سيقوم المشرف بربطك بكابتن مناسب قريباً أو يمكنك إرسال طلب ارتباط مباشر عبر زِر البطاقة.</p>
           </div>
         `;
       }
@@ -2488,6 +3583,7 @@
         <div class="admin-item-card" style="margin-bottom:12px;">
           <div style="font-weight:800; font-size:1rem; margin-bottom:6px;">👤 بيانات الطالب</div>
           <div style="font-size:0.85rem;"><strong>الاسم:</strong> ${escapeHTML(student.name)}</div>
+          <div style="font-size:0.85rem;"><strong>🔑 الرمز السري:</strong> ${escapeHTML(student.passCode || '-')}</div>
           <div style="font-size:0.85rem;"><strong>الرقم التسلسلي:</strong> ${escapeHTML(student.serialNo || '-')}</div>
           <div style="font-size:0.85rem;"><strong>الانطلاق والوجهة:</strong> ${escapeHTML(student.startLoc || '')} ➔ ${escapeHTML(student.targetLoc || '')}</div>
           <div style="font-size:0.85rem;"><strong>الحالة:</strong> <span class="status-badge-pill active-status">${escapeHTML(student.status || 'نشط')}</span></div>
@@ -2502,21 +3598,24 @@
       const logoutBtn = document.getElementById('captainLogoutBtn');
       if (!container) return;
 
-      if (!currentCaptainLoginPhone) {
+      if (!currentCaptainLoginPassCode) {
         if (logoutBtn) logoutBtn.style.display = 'none';
         container.innerHTML = `
           <div class="admin-item-card">
-            <div style="font-size:1rem; font-weight:800; margin-bottom:12px; text-align:center;">تسجيل دخول الكابتن</div>
+            <div style="font-size:1rem; font-weight:800; margin-bottom:12px; text-align:center;">تسجيل دخول الكابتن بالرمز السري</div>
             <form onsubmit="handleCaptainLogin(event)">
               <div class="form-group">
-                <label>رقم هاتف الكابتن المسجل *</label>
-                <input type="tel" class="form-input" id="captainLoginPhoneInput" placeholder="07700000000" required>
-              </div>
-              <div class="form-group">
-                <label>الرقم التسلسلي للكابتن (اختياري)</label>
-                <input type="text" class="form-input" id="captainLoginSerialInput" placeholder="مثال: MSR-C1234">
+                <label>الرمز السري 🔒 *</label>
+                <div style="position: relative; display: flex; align-items: center;">
+                  <input type="password" class="form-input" id="captainLoginPassCodeInput" placeholder="أدخل الرمز السري" required style="padding-left: 40px;">
+                  <span class="material-icons-outlined" onclick="togglePasswordVisibility('captainLoginPassCodeInput', this)" style="position: absolute; left: 10px; cursor: pointer; color: var(--text-muted); user-select: none;">visibility</span>
+                </div>
               </div>
               <button type="submit" class="submit-btn"><span class="material-icons-outlined">login</span> الدخول لإعدادات الكابتن</button>
+
+              <button type="button" id="captainForgotPassBtn" onclick="openForgotPasswordSupport('كابتن')" class="act-btn btn-red" style="display:${captainLoginFailedAttempts >= 2 ? 'flex' : 'none'}; width:100%; margin-top:10px; justify-content:center; padding:10px; font-weight:800;">
+                <span class="material-icons-outlined">support_agent</span> نسيان الرمز السري مراسلة الدعم
+              </button>
             </form>
           </div>
         `;
@@ -2528,31 +3627,57 @@
 
     function handleCaptainLogin(e) {
       e.preventDefault();
-      const phone = sanitizeInput(document.getElementById('captainLoginPhoneInput').value);
-      const serial = sanitizeInput(document.getElementById('captainLoginSerialInput').value);
+      const passCode = document.getElementById('captainLoginPassCodeInput') ? document.getElementById('captainLoginPassCodeInput').value.trim() : '';
 
-      if (!validatePhone(phone)) {
-        alert("يرجى إدخال رقم هاتف عراقي صحيح ❌");
+      if (!passCode) {
+        alert("يرجى إدخال الرمز السري ❌");
         return;
       }
 
-      currentCaptainLoginPhone = phone;
-      currentCaptainLoginSerial = serial;
-      localStorage.setItem('masar_captain_phone', phone);
-      localStorage.setItem('masar_captain_serial', serial);
+      const matchedCaptain = captainsData.find(c => c.passCode && c.passCode === passCode);
 
+      if (!matchedCaptain) {
+        captainLoginFailedAttempts++;
+        if (captainLoginFailedAttempts >= 2) {
+          const forgotBtn = document.getElementById('captainForgotPassBtn');
+          if (forgotBtn) forgotBtn.style.display = 'flex';
+          alert("الرمز السري غير صحيح. لقد تجاوزت محاولتين خاطئتين! يمكنك الضغط على نسيان الرمز السري لمراسلة الدعم.");
+        } else {
+          alert(`الرمز السري غير صحيح ❌ (محاولة ${captainLoginFailedAttempts} من 2)`);
+        }
+        return;
+      }
+
+      captainLoginFailedAttempts = 0;
+      const forgotBtn = document.getElementById('captainForgotPassBtn');
+      if (forgotBtn) forgotBtn.style.display = 'none';
+
+      currentCaptainLoginPhone = matchedCaptain.phone || '';
+      currentCaptainLoginPassCode = passCode;
+      localStorage.setItem('masar_captain_phone', currentCaptainLoginPhone);
+      localStorage.setItem('masar_captain_passcode', passCode);
+
+      trackUserPresence();
       renderCaptainSettingsView();
     }
 
     function logoutCaptainSession() {
+      if (!confirm("عند تسجيل خروجك لاتستطيع الدخول الابعد ادخال الرمز السري احفض الرمز السري")) return;
+      if (captainWatchId !== null) {
+        navigator.geolocation.clearWatch(captainWatchId);
+        captainWatchId = null;
+      }
       currentCaptainLoginPhone = '';
-      currentCaptainLoginSerial = '';
+      currentCaptainLoginPassCode = '';
       localStorage.removeItem('masar_captain_phone');
-      localStorage.removeItem('masar_captain_serial');
+      localStorage.removeItem('masar_captain_passcode');
+      captainLoginFailedAttempts = 0;
       renderCaptainSettingsView();
     }
 
     async function removeStudentFromCaptain(captainId, studentId) {
+      if (!confirm("هل أنت تأكد من حذف هذا الطالب من الخط؟")) return;
+
       const cap = captainsData.find(c => c.id === captainId);
       if (!cap) return;
       if (cap.students && Array.isArray(cap.students)) {
@@ -2574,12 +3699,12 @@
       const container = document.getElementById('captainSettingsContainer');
       if (!container) return;
 
-      const captain = captainsData.find(c => c.phone && c.phone.replace(/[\s-]/g, '') === currentCaptainLoginPhone.replace(/[\s-]/g, ''));
+      const captain = captainsData.find(c => c.passCode && c.passCode === currentCaptainLoginPassCode);
 
       if (!captain) {
         container.innerHTML = `
           <div class="admin-item-card" style="text-align:center;">
-            <p style="font-weight:700; color:var(--text-muted);">لم يتم العثور على كابتن مسجل برقم الهاتف: ${escapeHTML(currentCaptainLoginPhone)}</p>
+            <p style="font-weight:700; color:var(--text-muted);">لم يتم العثور على كابتن مسجل بهذا الرمز السري</p>
           </div>
         `;
         return;
@@ -2625,7 +3750,92 @@
         studentsHtml = `<p style="font-size:0.82rem; color:var(--text-muted); text-align:center;">لا يوجد طلاب مرتبطين بحسابك حالياً.</p>`;
       }
 
+      let pendingReqsHtml = '';
+      if (captain.pendingRequests && Array.isArray(captain.pendingRequests) && captain.pendingRequests.length > 0) {
+        pendingReqsHtml = `
+          <div class="admin-item-card" style="margin-top:12px; border:1px solid #f59e0b; background:var(--badge-yellow-bg);">
+            <div style="font-weight:800; font-size:0.95rem; color:#b45309; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
+              <span class="material-icons-outlined">pending_actions</span> طلبات الارتباط المعلقة (${captain.pendingRequests.length})
+            </div>
+            ${captain.pendingRequests.map(req => `
+              <div style="background:var(--card-bg); padding:10px; border-radius:10px; border:1px solid var(--border-color); margin-bottom:8px;">
+                <div style="font-weight:800; font-size:0.9rem; margin-bottom:4px;">👤 ${escapeHTML(req.studentName)}</div>
+                <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:4px;">📱 <strong>الهاتف:</strong> ${escapeHTML(req.studentPhone)}</div>
+                <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:6px;">📍 <strong>الانطلاق:</strong> ${escapeHTML(req.studentStartLoc)} ➔ 🎯 <strong>الوصول:</strong> ${escapeHTML(req.studentTargetLoc)}</div>
+                <div style="display:flex; gap:6px; margin-top:6px;">
+                  <button onclick="approveStudentLinkRequest('${captain.id}', '${req.studentId}')" class="act-btn-sm btn-green" style="flex:1; justify-content:center; padding:6px; font-weight:800;">
+                    <span class="material-icons-outlined" style="font-size:0.9rem;">check_circle</span> موافقة
+                  </button>
+                  <button onclick="rejectStudentLinkRequest('${captain.id}', '${req.studentId}')" class="act-btn-sm btn-red" style="flex:1; justify-content:center; padding:6px; font-weight:800;">
+                    <span class="material-icons-outlined" style="font-size:0.9rem;">cancel</span> رفض
+                  </button>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      }
+
+      const isLiveNow = captain.isLive || (captainWatchId !== null);
+      const liveBtnBg = isLiveNow ? 'background-color:#ef4444;' : 'background-color:var(--primary);';
+      const liveBtnText = isLiveNow ? 'إيقاف الرحلة والبث المباشر 🛑' : 'بدء الرحلة ومشاركة الموقع المباشر 🚌';
+
+      let approvalMsgHtml = '';
+      if (captain.approvalMsg && captain.approvalTime) {
+        const oneDayMs = 24 * 60 * 60 * 1000;
+        if (Date.now() - captain.approvalTime <= oneDayMs) {
+          approvalMsgHtml = `
+            <div class="admin-item-card" style="border: 1px solid #f59e0b; background: var(--badge-yellow-bg); margin-top: 10px; margin-bottom: 12px;">
+              <div style="font-weight: 800; font-size: 0.95rem; color: #f59e0b; display: flex; align-items: center; gap: 6px;">
+                <span class="material-icons-outlined">check_circle</span> ${escapeHTML(captain.approvalMsg)}
+              </div>
+            </div>
+          `;
+        } else {
+          db.collection("captains").doc(captain.id).update({
+            approvalMsg: firebase.firestore.FieldValue.delete(),
+            approvalTime: firebase.firestore.FieldValue.delete()
+          }).catch(e => console.warn(e));
+          captain.approvalMsg = null;
+          captain.approvalTime = null;
+        }
+      }
+
       container.innerHTML = `
+        <div class="admin-item-card" style="border: 1px solid var(--primary); background: var(--primary-light);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <div style="font-weight:800; font-size:0.95rem; color:var(--primary); display:flex; align-items:center; gap:6px;">
+              <span class="material-icons-outlined">sensors</span> التتبع والتنقل اللحظي عبر GPS
+            </div>
+            ${isLiveNow ? '<span class="badge-live"><span class="material-icons-outlined" style="font-size:0.8rem;">sensors</span> البث نشط الآن</span>' : ''}
+          </div>
+          <button onclick="toggleCaptainLiveTracking('${captain.id}')" class="submit-btn" style="${liveBtnBg} font-size:0.95rem; font-weight:800;">
+            <span class="material-icons-outlined">location_searching</span> ${liveBtnText}
+          </button>
+        </div>
+
+        <div class="admin-item-card" style="margin-top:12px; border: 1px solid var(--border-color);">
+          <div style="font-weight:800; font-size:0.95rem; color:var(--primary); margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+            <span class="material-icons-outlined">map</span> الخريطة التفاعلية لمسار الكابتن
+          </div>
+          <button type="button" class="act-btn" onclick="openLiveTrackingModal('${captain.id}')" style="width:100%; justify-content:center; background-color:var(--primary-light); color:var(--primary); border:1px solid var(--primary); font-weight:800;">
+            <span class="material-icons-outlined">my_location</span> عرض الخريطة التفاعلية للمسار والتتبع 🗺️
+          </button>
+        </div>
+
+        <div class="admin-item-card" style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px; border: 1px solid var(--border-color);">
+          <img src="${sanitizeUrl(captain.image, DEFAULT_CAPTAIN_IMG)}" class="captain-avatar" style="width: 64px; height: 64px; border-radius: 16px; border: 2px solid var(--primary);" alt="صورة الكابتن">
+          <div>
+            <div style="font-weight: 800; font-size: 1.1rem; display: flex; align-items: center; gap: 6px;">
+              <span>${escapeHTML(captain.name)}</span>
+              ${captain.isCertified ? '<span class="badge-certified"><span class="material-icons-outlined" style="font-size:0.8rem;">verified</span> معتمد</span>' : ''}
+            </div>
+            <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">
+              📞 ${escapeHTML(captain.phone || 'غير متوفر')} | 🔑 الرمز السري: ${escapeHTML(captain.passCode || '-')} | الرقم التسلسلي: ${escapeHTML(captain.serialNo || '-')}
+            </div>
+          </div>
+        </div>
+
         <div class="admin-item-card">
           <div style="font-weight:800; font-size:1.05rem; margin-bottom:12px; display:flex; align-items:center; gap:6px;">
             <span class="material-icons-outlined" style="color:var(--primary);">edit</span> تعديل بيانات الخط والكابتن
@@ -2643,8 +3853,16 @@
             </div>
 
             <div class="form-group">
+              <label>نوع الدوام *</label>
+              <select class="form-select" id="editCapShift">
+                <option value="صباحي" ${captain.shift === 'صباحي' ? 'selected' : ''}>صباحي</option>
+                <option value="مسائي" ${captain.shift === 'مسائي' ? 'selected' : ''}>مسائي</option>
+              </select>
+            </div>
+
+            <div class="form-group">
               <label>السعر المحدد *</label>
-              <input type="text" class="form-input" id="editCapPrice" value="${escapeHTML(captain.price || 'حسب الاتفاق')}" required>
+              <input type="text" class="form-input" id="editCapPrice" value="${escapeHTML(captain.price || 'حسب الاتفاق')}" required oninput="formatPriceInput(this)">
             </div>
 
             <div class="form-group">
@@ -2665,10 +3883,13 @@
 
             <button type="submit" class="submit-btn"><span class="material-icons-outlined">save</span> حفظ التغييرات 💾</button>
           </form>
+          ${approvalMsgHtml}
         </div>
 
+        ${pendingReqsHtml}
+
         <div class="admin-item-card" style="margin-top:12px;">
-          <div style="font-weight:800; font-size:0.95rem; color:var(--primary); margin-bottom:10px; display:flex; align-items:center; gap:6px;">
+          <div style="font-weight:800; font-size:0.9rem; color:var(--primary); margin-bottom:10px; display:flex; align-items:center; gap:6px;">
             <span class="material-icons-outlined">groups</span> الطلاب المرتبطون معك (${linkedStudentsList.length})
           </div>
           ${studentsHtml}
@@ -2681,15 +3902,29 @@
       const cap = captainsData.find(c => c.id === captainId);
       if (!cap) return;
 
-      cap.startLoc = sanitizeInput(document.getElementById('editCapStartLoc').value);
-      cap.targetLoc = sanitizeInput(document.getElementById('editCapTargetLoc').value);
-      cap.price = sanitizeInput(document.getElementById('editCapPrice').value);
-      cap.vacantSeats = parseInt(document.getElementById('editCapSeats').value, 10);
-      cap.lineType = document.getElementById('editCapLineType').value;
+      const newStartLoc = sanitizeInput(document.getElementById('editCapStartLoc').value);
+      const newTargetLoc = sanitizeInput(document.getElementById('editCapTargetLoc').value);
+      const newShift = document.getElementById('editCapShift') ? document.getElementById('editCapShift').value : (cap.shift || 'صباحي');
+      const newPrice = sanitizeInput(document.getElementById('editCapPrice').value);
+      const newSeats = parseInt(document.getElementById('editCapSeats').value, 10);
+      const newLineType = document.getElementById('editCapLineType').value;
 
-      await saveCaptainDoc(cap);
-      alert("تم حفظ تغييرات الكابتن بنجاح 💾");
-      renderCaptainSettingsResults();
+      const changeObj = {
+        id: "chg_" + cap.id,
+        captainId: cap.id,
+        captainName: cap.name,
+        captainPhone: cap.phone,
+        startLoc: newStartLoc,
+        targetLoc: newTargetLoc,
+        shift: newShift,
+        price: newPrice,
+        vacantSeats: newSeats,
+        lineType: newLineType,
+        createdAt: Date.now()
+      };
+
+      await db.collection("captain_changes").doc(cap.id).set(changeObj);
+      alert("تم ارسال التغييرات الى لوحه المشرفين انتضر الموافقه");
     }
 
     function switchAdminTab(tab) {
@@ -2697,6 +3932,7 @@
       document.querySelectorAll('.admin-tab-btn').forEach(btn => btn.classList.remove('active'));
       const activeBtn = document.getElementById(`tab${tab.charAt(0).toUpperCase() + tab.slice(1)}`);
       if (activeBtn) activeBtn.classList.add('active');
+      if (tab === 'captainChanges') loadCaptainChanges();
       renderAdminContent();
     }
 
@@ -2708,13 +3944,201 @@
       renderAdminContent();
     }
 
-    /* التعديل 1: البحث التقريبي في لوحة التحكم لمختلف الحقول */
     function renderAdminContent() {
       const container = document.getElementById('adminCardsContainer');
       const loadMoreContainer = document.getElementById('adminLoadMoreContainer');
       if (!container) return;
 
       const adminSearch = document.getElementById('adminSearchInput') ? document.getElementById('adminSearchInput').value : '';
+
+      if (activeAdminTab === 'online') {
+        db.collection("active_presence").orderBy("lastActive", "desc").limit(50).get().then(snapshot => {
+          if (snapshot.empty) {
+            container.innerHTML = `<div style="text-align:center; padding:20px; color:var(--text-muted);">لا يوجد مستخدمون متواجدون حالياً</div>`;
+            if (loadMoreContainer) loadMoreContainer.innerHTML = '';
+            return;
+          }
+
+          let captainsOnline = [];
+          let studentsOnline = [];
+
+          snapshot.docs.forEach(doc => {
+            const data = { docId: doc.id, ...doc.data() };
+            if (adminSearch && !isApproximateMatch(data.name, adminSearch) && !isApproximateMatch(data.phone, adminSearch) && !isApproximateMatch(data.role, adminSearch)) {
+              return;
+            }
+            if (data.role === 'كابتن') {
+              captainsOnline.push(data);
+            } else {
+              studentsOnline.push(data);
+            }
+          });
+
+          if (captainsOnline.length === 0 && studentsOnline.length === 0) {
+            container.innerHTML = `<div style="text-align:center; padding:20px; color:var(--text-muted);">لا توجد نتائج متطابقة للبحث</div>`;
+            if (loadMoreContainer) loadMoreContainer.innerHTML = '';
+            return;
+          }
+
+          function renderOnlineCard(data) {
+            const isOnlineNow = (Date.now() - (data.lastActive || 0)) < 5 * 60 * 1000;
+            const roleBadgeClass = data.role === 'كابتن' ? 'btn-green' : (data.role.includes('طالب') ? 'btn-blue' : 'btn-yellow');
+            
+            let matchedObj = null;
+            if (data.role === 'كابتن') {
+              matchedObj = captainsData.find(c => c.phone && data.phone && c.phone.replace(/[\s-]/g, '') === data.phone.replace(/[\s-]/g, ''));
+            } else {
+              matchedObj = studentsData.find(s => s.phone && data.phone && s.phone.replace(/[\s-]/g, '') === data.phone.replace(/[\s-]/g, ''));
+            }
+
+            const startLoc = data.startLoc || (matchedObj ? matchedObj.startLoc : 'غير محدد');
+            const targetLoc = data.targetLoc || (matchedObj ? matchedObj.targetLoc : 'غير محدد');
+            const statusVal = data.status || (matchedObj ? matchedObj.status : 'جديد');
+
+            const statusClass = statusVal === 'مكتمل' ? 'completed-status' : 'new-status';
+
+            return `
+              <div class="admin-item-card">
+                <div class="item-card-header">
+                  <div class="item-title-group">
+                    <span class="material-icons-outlined" style="font-size:2rem; color:var(--primary);">account_circle</span>
+                    <div>
+                      <div class="item-name">${escapeHTML(data.name || 'مستخدم')}</div>
+                      <div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">
+                        📞 ${escapeHTML(data.phone || 'غير متوفر')}
+                      </div>
+                    </div>
+                  </div>
+                  <div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px;">
+                    <span class="status-badge-pill ${isOnlineNow ? 'active-status' : 'new-status'}">
+                      ${isOnlineNow ? '🟢 متواجد الآن' : '⚪ غير متواجد'}
+                    </span>
+                    <span class="status-badge-pill ${statusClass}">
+                      ${escapeHTML(statusVal)}
+                    </span>
+                  </div>
+                </div>
+
+                <div class="compact-info-grid">
+                  <div class="compact-info-item">
+                    <span class="material-icons-outlined">badge</span>
+                    <div><strong>الصفة:</strong> <span class="act-btn-sm ${roleBadgeClass}" style="padding:2px 8px; font-size:0.75rem;">${escapeHTML(data.role || 'زائر')}</span></div>
+                  </div>
+                  <div class="compact-info-item">
+                    <span class="material-icons-outlined">schedule</span>
+                    <div><strong>آخر تواجد:</strong> ${formatLastActiveTime(data.lastActive)}</div>
+                  </div>
+                  <div class="compact-info-item">
+                    <span class="material-icons-outlined">place</span>
+                    <div><strong>الانطلاق:</strong> ${escapeHTML(startLoc)}</div>
+                  </div>
+                  <div class="compact-info-item">
+                    <span class="material-icons-outlined">near_me</span>
+                    <div><strong>الوصول:</strong> ${escapeHTML(targetLoc)}</div>
+                  </div>
+                </div>
+
+                <div class="admin-actions-grid" style="margin-top:8px;">
+                  <button class="act-btn-sm btn-red" onclick="deleteOnlinePresenceDoc('${data.docId}')" style="background:#dc2626; color:#fff; width:100%; justify-content:center;">
+                    <span class="material-icons-outlined">delete_forever</span> حذف بشكل نهائي من المتواجدين
+                  </button>
+                </div>
+              </div>
+            `;
+          }
+
+          let html = '';
+
+          html += `<div style="font-size:1rem; font-weight:800; color:var(--primary); margin-bottom:10px; display:flex; align-items:center; gap:6px;">
+            <span class="material-icons-outlined">directions_car</span> قائمة الكباتن المتواجدين (${captainsOnline.length})
+          </div>`;
+          if (captainsOnline.length > 0) {
+            captainsOnline.forEach(c => { html += renderOnlineCard(c); });
+          } else {
+            html += `<div style="font-size:0.82rem; color:var(--text-muted); margin-bottom:14px;">لا يوجد كباتن متواجدون حالياً</div>`;
+          }
+
+          html += `<div style="font-size:1rem; font-weight:800; color:var(--primary); margin-top:16px; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
+            <span class="material-icons-outlined">school</span> قائمة الطلاب المتواجدين (${studentsOnline.length})
+          </div>`;
+          if (studentsOnline.length > 0) {
+            studentsOnline.forEach(s => { html += renderOnlineCard(s); });
+          } else {
+            html += `<div style="font-size:0.82rem; color:var(--text-muted); margin-bottom:14px;">لا يوجد طلاب متواجدون حالياً</div>`;
+          }
+
+          container.innerHTML = html;
+          if (loadMoreContainer) loadMoreContainer.innerHTML = '';
+        }).catch(err => {
+          container.innerHTML = `<div style="text-align:center; padding:20px; color:var(--badge-red-text);">خطأ في جلب بيانات المتواجدين: ${err.message}</div>`;
+        });
+        return;
+      }
+
+      if (activeAdminTab === 'captainChanges') {
+        if (captainChangesData.length === 0) {
+          container.innerHTML = `<div style="text-align:center; padding:20px; color:var(--text-muted);">لا توجد تغييرات معلقة للكباتن حالياً</div>`;
+          if (loadMoreContainer) loadMoreContainer.innerHTML = '';
+          return;
+        }
+
+        let html = '';
+        captainChangesData.forEach(chg => {
+          html += `
+            <div class="admin-item-card">
+              <div class="item-card-header">
+                <div class="item-title-group">
+                  <div>
+                    <div class="item-name">${escapeHTML(chg.captainName || 'كابتن')}</div>
+                    <div style="font-size:0.75rem; color:var(--text-muted);">📞 ${escapeHTML(chg.captainPhone || '')}</div>
+                  </div>
+                </div>
+                <span class="status-badge-pill new-status">تغيير قيد الانتظار</span>
+              </div>
+
+              <div class="compact-info-grid">
+                <div class="compact-info-item">
+                  <span class="material-icons-outlined">place</span>
+                  <div><strong>الانطلاق الجديد:</strong> ${escapeHTML(chg.startLoc || 'غير محدد')}</div>
+                </div>
+                <div class="compact-info-item">
+                  <span class="material-icons-outlined">near_me</span>
+                  <div><strong>الوصول الجديد:</strong> ${escapeHTML(chg.targetLoc || 'غير محدد')}</div>
+                </div>
+                <div class="compact-info-item">
+                  <span class="material-icons-outlined">schedule</span>
+                  <div><strong>الدوام الجديد:</strong> ${escapeHTML(chg.shift || 'صباحي')}</div>
+                </div>
+                <div class="compact-info-item">
+                  <span class="material-icons-outlined">payments</span>
+                  <div><strong>السعر الجديد:</strong> ${escapeHTML(chg.price || 'حسب الاتفاق')}</div>
+                </div>
+                <div class="compact-info-item">
+                  <span class="material-icons-outlined">event_seat</span>
+                  <div><strong>المقاعد الشاغرة:</strong> ${chg.vacantSeats} مقاعد</div>
+                </div>
+                <div class="compact-info-item">
+                  <span class="material-icons-outlined">wc</span>
+                  <div><strong>نوع الخط:</strong> ${escapeHTML(chg.lineType || 'مختلط')}</div>
+                </div>
+              </div>
+
+              <div class="admin-actions-grid">
+                <button class="act-btn-sm btn-green" onclick="approveCaptainChange('${chg.id}')">
+                  <span class="material-icons-outlined">check_circle</span> موافقة
+                </button>
+                <button class="act-btn-sm btn-red" onclick="deleteCaptainChange('${chg.id}')">
+                  <span class="material-icons-outlined">delete</span> حذف
+                </button>
+              </div>
+            </div>
+          `;
+        });
+
+        container.innerHTML = html;
+        if (loadMoreContainer) loadMoreContainer.innerHTML = '';
+        return;
+      }
 
       if (activeAdminTab === 'captains') {
         let list = captainsData.filter(c => {
@@ -2752,7 +4176,15 @@
                   <img src="${imgUrl}" class="captain-avatar" alt="صورة">
                   <div>
                     <div class="item-name">${escapeHTML(c.name)} ${isCertified ? '<span class="badge-certified"><span class="material-icons-outlined" style="font-size:0.8rem;">verified</span> معتمد</span>' : ''}</div>
-                    <div style="font-size:0.75rem; color:var(--text-muted);">${escapeHTML(c.phone || '')} | ${escapeHTML(c.serialNo || '')}</div>
+                    <div style="font-size:0.75rem; color:var(--text-muted); display:flex; align-items:center; gap:4px; flex-wrap:wrap; margin-top:2px;">
+                      <span>📞 ${escapeHTML(c.phone || '')}</span>
+                      <button type="button" onclick="copyToClipboard('${escapeHTML(c.phone || '')}')" title="نسخ رقم الهاتف" style="background:none; border:none; cursor:pointer; color:var(--primary); padding:2px; display:inline-flex; align-items:center;"><span class="material-icons-outlined" style="font-size:0.9rem;">content_copy</span></button>
+                      <span>|</span>
+                      <span>🔑 الرمز السري: ${escapeHTML(c.passCode || '-')}</span>
+                      <span>|</span>
+                      <span>الرقم التسلسلي: ${escapeHTML(c.serialNo || '')}</span>
+                      <button type="button" onclick="copyToClipboard('${escapeHTML(c.serialNo || '')}')" title="نسخ الرقم التسلسلي" style="background:none; border:none; cursor:pointer; color:var(--primary); padding:2px; display:inline-flex; align-items:center;"><span class="material-icons-outlined" style="font-size:0.9rem;">content_copy</span></button>
+                    </div>
                   </div>
                 </div>
                 <span class="status-badge-pill ${isBanned ? 'banned-status' : (isActive ? 'active-status' : 'new-status')}">${escapeHTML(c.status || 'جديد')}</span>
@@ -2766,6 +4198,10 @@
                 <div class="compact-info-item">
                   <span class="material-icons-outlined">near_me</span>
                   <div><strong>إلى:</strong> ${escapeHTML(c.targetLoc || '')}</div>
+                </div>
+                <div class="compact-info-item">
+                  <span class="material-icons-outlined">schedule</span>
+                  <div><strong>نوع الدوام:</strong> ${escapeHTML(c.shift || 'صباحي')}</div>
                 </div>
                 <div class="compact-info-item">
                   <span class="material-icons-outlined">directions_car</span>
@@ -2830,7 +4266,7 @@
               <div class="item-card-header">
                 <div>
                   <div class="item-name">${escapeHTML(s.name)} (${escapeHTML(s.type)})</div>
-                  <div style="font-size:0.75rem; color:var(--text-muted);">${escapeHTML(s.phone)} | ${escapeHTML(s.serialNo || '')}</div>
+                  <div style="font-size:0.75rem; color:var(--text-muted);">${escapeHTML(s.phone)} | 🔑 الرمز السري: ${escapeHTML(s.passCode || '-')} | ${escapeHTML(s.serialNo || '')}</div>
                 </div>
                 <span class="status-badge-pill ${isBanned ? 'banned-status' : 'active-status'}">${escapeHTML(s.status || 'نشط')}</span>
               </div>
@@ -2853,6 +4289,51 @@
           loadMoreContainer.innerHTML = hasMoreStudents ? `<button class="load-more-btn" onclick="loadStudents(true)">تحميل المزيد من الطلاب</button>` : '';
         }
       }
+    }
+
+    async function approveCaptainChange(changeId) {
+      const chg = captainChangesData.find(c => c.id === changeId);
+      if (!chg) return;
+
+      const cap = captainsData.find(c => c.id === chg.captainId);
+      const approvalTime = Date.now();
+      const approvalMsg = "تمت الموافقة على التغيرات التي اجريتها";
+
+      if (cap) {
+        cap.startLoc = chg.startLoc;
+        cap.targetLoc = chg.targetLoc;
+        cap.shift = chg.shift || cap.shift || 'صباحي';
+        cap.price = chg.price;
+        cap.vacantSeats = chg.vacantSeats;
+        cap.lineType = chg.lineType;
+        cap.approvalMsg = approvalMsg;
+        cap.approvalTime = approvalTime;
+        await saveCaptainDoc(cap);
+      } else {
+        await db.collection("captains").doc(chg.captainId).update({
+          startLoc: chg.startLoc,
+          targetLoc: chg.targetLoc,
+          shift: chg.shift || 'صباحي',
+          price: chg.price,
+          vacantSeats: chg.vacantSeats,
+          lineType: chg.lineType,
+          approvalMsg: approvalMsg,
+          approvalTime: approvalTime
+        });
+      }
+
+      await db.collection("captain_changes").doc(chg.id).delete();
+      captainChangesData = captainChangesData.filter(c => c.id !== chg.id);
+      alert("تمت الموافقة على التغييرات وتحديث بيانات الكابتن بنجاح ✅");
+      renderAdminContent();
+    }
+
+    async function deleteCaptainChange(changeId) {
+      if (!confirm("هل أنت تأكد من حذف طلب التغيير؟")) return;
+      await db.collection("captain_changes").doc(changeId).delete();
+      captainChangesData = captainChangesData.filter(c => c.id !== changeId);
+      alert("تم حذف طلب التغيير بنجاح");
+      renderAdminContent();
     }
 
     async function toggleCaptainCertified(captainId) {
@@ -2917,7 +4398,16 @@
       document.getElementById('addStudentPhoneInput').value = '';
       document.getElementById('addStudentNameInput').value = '';
       document.getElementById('studentLookupStatus').innerText = '';
-      openModal('addStudentToCaptainModal');
+      const panel = document.getElementById('addStudentFixedPanel');
+      if (panel) {
+        panel.style.display = 'block';
+        panel.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+
+    function closeAddStudentFixedPanel() {
+      const panel = document.getElementById('addStudentFixedPanel');
+      if (panel) panel.style.display = 'none';
     }
 
     function lookupStudentByPhone(phone) {
@@ -2967,7 +4457,7 @@
       if (Number(cap.vacantSeats) > 0) cap.vacantSeats = Number(cap.vacantSeats) - 1;
 
       await saveCaptainDoc(cap);
-      closeModal('addStudentToCaptainModal');
+      closeAddStudentFixedPanel();
       alert("تمت إضافة الطالب للكابتن بنجاح ✅");
       renderAdminContent();
     }
@@ -2976,7 +4466,16 @@
       document.getElementById('adminTargetCaptainIdForImg').value = captainId;
       const cap = captainsData.find(c => c.id === captainId);
       document.getElementById('adminCaptainImgInput').value = cap ? cap.image || '' : '';
-      openModal('adminCaptainImageModal');
+      const panel = document.getElementById('adminCaptainImageFixedPanel');
+      if (panel) {
+        panel.style.display = 'block';
+        panel.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+
+    function closeCaptainImageFixedPanel() {
+      const panel = document.getElementById('adminCaptainImageFixedPanel');
+      if (panel) panel.style.display = 'none';
     }
 
     async function handleAdminUpdateCaptainImage(e) {
@@ -2989,7 +4488,7 @@
 
       cap.image = imgUrl;
       await saveCaptainDoc(cap);
-      closeModal('adminCaptainImageModal');
+      closeCaptainImageFixedPanel();
       alert("تم تحديث صورة الكابتن بنجاح ✅");
       renderAdminContent();
     }
@@ -3026,81 +4525,136 @@
       openModal('captainMsgModal');
     }
 
-    /* التعديل 2: تحويل ميزات الذكاء الاصطناعي للمشرفين إلى تقارير تحليلات وعدم الربط التلقائي */
+    async function linkStudentToCaptainFromAI(studentId, captainId) {
+      const cap = captainsData.find(c => c.id === captainId);
+      const st = studentsData.find(s => s.id === studentId);
+      if (!cap || !st) return;
+
+      if (!cap.students) cap.students = [];
+
+      st.captainId = cap.id;
+      await saveStudentDoc(st);
+
+      cap.students.push({ id: st.id, name: st.name, phone: st.phone, startLoc: st.startLoc, targetLoc: st.targetLoc });
+      if (Number(cap.vacantSeats) > 0) cap.vacantSeats = Number(cap.vacantSeats) - 1;
+
+      await saveCaptainDoc(cap);
+      alert(`تم ربط الطالب (${st.name}) بالكابتن (${cap.name}) بنجاح ✅`);
+      runAdminAIAssistant();
+      renderAdminContent();
+    }
+
+    function closeAIReportFixedPanel() {
+      const panel = document.getElementById('aiReportFixedPanel');
+      if (panel) panel.style.display = 'none';
+    }
+
     function runAdminAIAssistant() {
-      const output = document.getElementById('aiAssistantOutput');
+      const panel = document.getElementById('aiReportFixedPanel');
+      const output = document.getElementById('aiReportFixedPanelContent');
+      
+      if (panel) {
+        panel.style.display = 'block';
+        panel.scrollIntoView({ behavior: 'smooth' });
+      }
+
       if (!output) return;
+
+      const selectedGov = document.getElementById('aiGovFilter') ? document.getElementById('aiGovFilter').value : '';
 
       output.innerText = "جاري تحليل البيانات وإعداد التقارير الذكية للمشرفين...";
 
       setTimeout(() => {
-        // 1. تقرير المطابقات المقترحة
         let suggestedMatches = [];
         studentsData.forEach(st => {
           if ((st.status === 'جديد' || !st.captainId) && st.status !== 'محظور') {
-            const matchedCap = captainsData.find(c => c.status !== 'محظور' && Number(c.vacantSeats) > 0 && isApproximateMatch(c.targetLoc, st.targetLoc));
+            if (selectedGov && !isApproximateMatch(st.startLoc, selectedGov)) return;
+
+            const matchedCap = captainsData.find(c => c.status !== 'محظور' && Number(c.vacantSeats) > 0 && isApproximateMatch(c.targetLoc, st.targetLoc) && (!selectedGov || isApproximateMatch(c.startLoc, selectedGov)));
             if (matchedCap) {
               suggestedMatches.push({
+                studentId: st.id,
                 studentName: st.name,
+                studentPhone: st.phone,
                 studentLoc: st.startLoc || 'غير محدد',
                 target: st.targetLoc || 'غير محدد',
+                captainId: matchedCap.id,
                 captainName: matchedCap.name,
+                captainPhone: matchedCap.phone,
+                captainLoc: matchedCap.startLoc || 'غير محدد',
+                captainTarget: matchedCap.targetLoc || 'غير محدد',
                 captainSeats: matchedCap.vacantSeats
               });
             }
           }
         });
 
-        // 2. تقرير تحليل العجز حسب المناطق
-        let unservedAreas = {};
-        studentsData.forEach(st => {
-          if (!st.captainId && st.status !== 'محظور') {
-            const area = st.startLoc || 'مناطق أخرى';
-            unservedAreas[area] = (unservedAreas[area] || 0) + 1;
-          }
+        let waitingStudents = studentsData.filter(st => {
+          if (st.status === 'محظور' || st.captainId) return false;
+          if (selectedGov && !isApproximateMatch(st.startLoc, selectedGov)) return false;
+          return true;
         });
 
-        // 3. تقرير السعة التشغيلية وإشغال الخطوط
         let totalSeatsAvailable = 0;
         let totalFullLines = 0;
         let totalActiveCaptains = 0;
         captainsData.forEach(c => {
           if (c.status !== 'محظور') {
+            if (selectedGov && !isApproximateMatch(c.startLoc, selectedGov)) return;
             totalActiveCaptains++;
             totalSeatsAvailable += Number(c.vacantSeats || 0);
             if (Number(c.vacantSeats) === 0 || c.status === 'مكتمل') totalFullLines++;
           }
         });
 
-        // صياغة التقرير الإشرافي العرضي للمشرف
         let reportHtml = `<div style="display:flex; flex-direction:column; gap:8px;">`;
         
-        reportHtml += `<div><strong>📊 تقرير السعة والخطوط:</strong> إجمالي الكباتن النشطين (${totalActiveCaptains}) | المقاعد الشاغرة الكلية (${totalSeatsAvailable}) | الخطوط المكتملة (${totalFullLines})</div>`;
+        reportHtml += `<div><strong>📊 تقرير السعة والخطوط ${selectedGov ? `(${escapeHTML(selectedGov)})` : ''}:</strong> إجمالي الكباتن النشطين (${totalActiveCaptains}) | المقاعد الشاغرة الكلية (${totalSeatsAvailable}) | الخطوط المكتملة (${totalFullLines})</div>`;
 
         reportHtml += `<div style="margin-top:4px;"><strong>🧩 التوصيات والمطابقات المقترحة (${suggestedMatches.length}):</strong></div>`;
         if (suggestedMatches.length > 0) {
-          reportHtml += `<ul style="padding-right:16px; font-size:0.8rem; margin-bottom:4px;">`;
-          suggestedMatches.slice(0, 5).forEach(m => {
-            reportHtml += `<li>الطالب: <strong>${escapeHTML(m.studentName)}</strong> (${escapeHTML(m.studentLoc)} ➔ ${escapeHTML(m.target)}) ⬅️ اقترح ربطه بالكابتن: <strong>${escapeHTML(m.captainName)}</strong> (${m.captainSeats} مقاعد)</li>`;
+          reportHtml += `<ul style="padding-right:0; font-size:0.8rem; margin-bottom:4px; list-style:none;">`;
+          suggestedMatches.forEach(m => {
+            reportHtml += `<li style="margin-bottom:10px; padding:10px; background:var(--card-bg); border-radius:10px; border:1px solid var(--border-color);">
+              <div style="font-weight:800; color:var(--primary); font-size:0.9rem; margin-bottom:4px;">
+                🚗 الكابتن: ${escapeHTML(m.captainName)} | 📱 هاتف: ${escapeHTML(m.captainPhone || 'غير متوفر')}
+              </div>
+              <div style="font-size:0.8rem; margin-bottom:6px; color:var(--text-muted);">
+                📍 انطلاق: ${escapeHTML(m.captainLoc)} | 🎯 وصول: ${escapeHTML(m.captainTarget)} | 🪑 المقاعد الشاغرة: ${m.captainSeats}
+              </div>
+              
+              <div style="background:var(--input-bg); padding:8px; border-radius:8px; border:1px solid var(--border-color); margin-top:6px;">
+                <div style="font-weight:700; font-size:0.82rem; margin-bottom:4px;">🎓 الطالب المتطابق:</div>
+                <div><strong>الاسم:</strong> ${escapeHTML(m.studentName)}</div>
+                <div>📱 <strong>الهاتف:</strong> ${escapeHTML(m.studentPhone || 'غير متوفر')}</div>
+                <div>📍 <strong>نقطة الانطلاق:</strong> ${escapeHTML(m.studentLoc)}</div>
+                <div>🎯 <strong>نقطة الوصول:</strong> ${escapeHTML(m.target)}</div>
+                
+                <button onclick="linkStudentToCaptainFromAI('${m.studentId}', '${m.captainId}')" class="act-btn-sm btn-green" style="margin-top:8px; width:100%; padding:6px; font-weight:bold; justify-content:center;">
+                  <span class="material-icons-outlined" style="font-size:0.9rem;">link</span> ربط مع الكابتن
+                </button>
+              </div>
+            </li>`;
           });
-          if (suggestedMatches.length > 5) {
-            reportHtml += `<li>...وهناك ${suggestedMatches.length - 5} اقتراحات أخرى.</li>`;
-          }
           reportHtml += `</ul>`;
         } else {
-          reportHtml += `<div style="font-size:0.8rem; color:var(--text-muted);">لا توجد اقتراحات مطابقة جديدة حالياً.</div>`;
+          reportHtml += `<div style="font-size:0.8rem; color:var(--text-muted);">لا توجد اقتراحات مطابقة جديدة حالياً ${selectedGov ? `في محافظة ${escapeHTML(selectedGov)}` : ''}.</div>`;
         }
 
-        reportHtml += `<div style="margin-top:4px;"><strong>⚠️ تقرير المناطق الأكثر طلباً بحاجة لكباتن جدد:</strong></div>`;
-        const topUnserved = Object.entries(unservedAreas).sort((a, b) => b[1] - a[1]).slice(0, 3);
-        if (topUnserved.length > 0) {
-          reportHtml += `<ul style="padding-right:16px; font-size:0.8rem;">`;
-          topUnserved.forEach(([area, count]) => {
-            reportHtml += `<li>منطقة <strong>${escapeHTML(area)}</strong>: بها ${count} طلاب ينتظرون توفير خطوط.</li>`;
+        reportHtml += `<div style="margin-top:6px;"><strong>⚠ تقرير الطلاب المنتظرين لتوفير خط (${waitingStudents.length}):</strong></div>`;
+        if (waitingStudents.length > 0) {
+          reportHtml += `<ul style="padding-right:0; font-size:0.8rem; margin-top:4px; list-style:none;">`;
+          waitingStudents.forEach(st => {
+            reportHtml += `<li style="margin-bottom:6px; padding:8px; background:var(--card-bg); border-radius:8px; border:1px solid var(--border-color);">
+              <div>🎓 <strong>الطالب:</strong> ${escapeHTML(st.name)}</div>
+              <div>📞 <strong>الهاتف:</strong> ${escapeHTML(st.phone || 'غير متوفر')}</div>
+              <div>📍 <strong>نقطة الانطلاق:</strong> ${escapeHTML(st.startLoc || 'غير محدد')}</div>
+              <div>🎯 <strong>نقطة الوصول:</strong> ${escapeHTML(st.targetLoc || 'غير محدد')}</div>
+            </li>`;
           });
           reportHtml += `</ul>`;
         } else {
-          reportHtml += `<div style="font-size:0.8rem; color:var(--text-muted);">جميع المناطق تغطيها خطوط حالياً.</div>`;
+          reportHtml += `<div style="font-size:0.8rem; color:var(--text-muted);">لا يوجد طلاب ينتظرون توفير خط حالياً ${selectedGov ? `في محافظة ${escapeHTML(selectedGov)}` : ''}.</div>`;
         }
 
         reportHtml += `</div>`;
